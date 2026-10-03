@@ -1,0 +1,5 @@
+package com.muzayen.muzayen
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

@@ -1,0 +1,56 @@
+<?php
+
+use App\Http\Controllers\Api\AccountController;
+use App\Http\Controllers\Api\AppPageController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\MobileSlideController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\SalonBookingController;
+use App\Http\Controllers\Api\SalonController;
+use App\Http\Controllers\Api\SalonProfileController;
+use App\Http\Controllers\Api\SubscriptionPlanController;
+use Illuminate\Support\Facades\Route;
+
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::middleware('throttle:6,1')->group(function (): void {
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+});
+Route::get('/account', [AccountController::class, 'show']);
+Route::get('/account/bookings', [AccountController::class, 'bookings']);
+Route::post('/account/bookings/{booking}/cancel', [AccountController::class, 'cancelBooking']);
+Route::post('/account/bookings/{booking}/review', [AccountController::class, 'reviewBooking']);
+Route::patch('/account', [AccountController::class, 'update']);
+Route::post('/account/avatar', [AccountController::class, 'avatar']);
+Route::get('/account/wallet', [AccountController::class, 'wallet']);
+Route::get('/account/loyalty', [AccountController::class, 'loyalty']);
+Route::post('/account/salon/image', [AccountController::class, 'salonImage']);
+Route::get('/notifications', [NotificationController::class, 'index']);
+Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+Route::post('/notifications/{notification}/read', [NotificationController::class, 'read']);
+Route::get('/salon/bookings', [SalonBookingController::class, 'index']);
+Route::post('/salon/bookings/{booking}/confirm', [SalonBookingController::class, 'confirm']);
+Route::post('/salon/bookings/{booking}/cancel', [SalonBookingController::class, 'cancel']);
+Route::get('/salon/profile', [SalonProfileController::class, 'show']);
+Route::patch('/salon/profile', [SalonProfileController::class, 'update']);
+Route::put('/salon/hours', [SalonProfileController::class, 'updateHours']);
+Route::post('/salon/services', [SalonProfileController::class, 'storeService']);
+Route::patch('/salon/services/{service}', [SalonProfileController::class, 'updateService']);
+Route::delete('/salon/services/{service}', [SalonProfileController::class, 'destroyService']);
+Route::post('/salon/specialists', [SalonProfileController::class, 'storeSpecialist']);
+Route::patch('/salon/specialists/{specialist}', [SalonProfileController::class, 'updateSpecialist']);
+Route::delete('/salon/specialists/{specialist}', [SalonProfileController::class, 'destroySpecialist']);
+Route::get('/users/{user}/avatar', [AccountController::class, 'avatarFile']);
+Route::get('/pages', [AppPageController::class, 'index']);
+Route::get('/slides', [MobileSlideController::class, 'index']);
+Route::get('/slides/{slide}/image', [MobileSlideController::class, 'image']);
+Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index']);
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/catalog', [CategoryController::class, 'catalog']);
+Route::get('/salons', [SalonController::class, 'index']);
+Route::get('/services', [SalonController::class, 'services']);
+Route::get('/salons/{salon}/image', [SalonController::class, 'image']);
+Route::get('/salons/{salon}', [SalonController::class, 'show']);
+Route::post('/salons/{salon}/bookings', [SalonController::class, 'storeBooking']);
