@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/account_store.dart';
 import '../data/cart_store.dart';
@@ -6,7 +7,8 @@ import '../data/home_slide.dart';
 import '../data/salon_detail.dart';
 import '../theme/app_colors.dart';
 import '../widgets/favorite_button.dart';
-import '../widgets/salon_photo.dart';
+import '../widgets/kids_backdrop.dart';
+import '../widgets/salon_media_slider.dart';
 import 'cart_screen.dart';
 import 'login_screen.dart';
 
@@ -25,6 +27,12 @@ class SalonScreen extends StatefulWidget {
   final SalonPalette palette;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenCart;
+
+  static Future<bool> Function(Uri uri) openMaps = (uri) =>
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+
+  static void useDefaultMaps() =>
+      openMaps = (uri) => launchUrl(uri, mode: LaunchMode.externalApplication);
 
   @override
   State<SalonScreen> createState() => _SalonScreenState();
@@ -64,49 +72,54 @@ class _SalonScreenState extends State<SalonScreen> {
     }
   }
 
+  bool get _kids =>
+      widget.palette.accent == SalonPalette.kids.accent ||
+      _detail?.categorySlug == 'kids';
+
   @override
   Widget build(BuildContext context) {
     final detail = _detail;
+    final body = SafeArea(
+      child: _loading || detail == null
+          ? Center(
+              child: CircularProgressIndicator(color: widget.palette.accent),
+            )
+          : _SalonBody(
+              detail: detail,
+              english: _english,
+              serviceId: _serviceId,
+              specialistId: _specialistId,
+              day: _day,
+              time: _time,
+              onService: (id) => setState(() {
+                _serviceId = id;
+                _specialistId = null;
+                _time = null;
+              }),
+              onSpecialist: (id) => setState(() {
+                _specialistId = id;
+                _time = null;
+              }),
+              onDay: (day) => setState(() {
+                _day = day;
+                _time = null;
+              }),
+              onTime: (time) => setState(() => _time = time),
+              onBook: _book,
+              onLogin: _login,
+              onBack: widget.onBack,
+            ),
+    );
 
     return SalonTheme(
       palette: widget.palette,
       child: Directionality(
         textDirection: _english ? TextDirection.ltr : TextDirection.rtl,
         child: Scaffold(
-          backgroundColor: widget.palette.background,
-          body: SafeArea(
-            child: _loading || detail == null
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: widget.palette.accent,
-                    ),
-                  )
-                : _SalonBody(
-                    detail: detail,
-                    english: _english,
-                    serviceId: _serviceId,
-                    specialistId: _specialistId,
-                    day: _day,
-                    time: _time,
-                    onService: (id) => setState(() {
-                      _serviceId = id;
-                      _specialistId = null;
-                      _time = null;
-                    }),
-                    onSpecialist: (id) => setState(() {
-                      _specialistId = id;
-                      _time = null;
-                    }),
-                    onDay: (day) => setState(() {
-                      _day = day;
-                      _time = null;
-                    }),
-                    onTime: (time) => setState(() => _time = time),
-                    onBook: _book,
-                    onLogin: _login,
-                    onBack: widget.onBack,
-                  ),
-          ),
+          backgroundColor: _kids
+              ? Colors.transparent
+              : widget.palette.background,
+          body: _kids ? KidsBackdrop(child: body) : body,
         ),
       ),
     );
@@ -216,16 +229,11 @@ class _SalonBody extends StatelessWidget {
             onPressed: onBack,
           ),
         ),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: SizedBox(
-            height: 190,
-            width: double.infinity,
-            child: SalonPhoto(
-              url: detail.imageUrl,
-              asset: salonPhotoAsset(detail.name),
-            ),
-          ),
+        SalonMediaSlider(
+          media: detail.media,
+          fallbackName: detail.name,
+          fallbackUrl: detail.imageUrl,
+          height: 210,
         ),
         const SizedBox(height: 16),
         Text(
@@ -270,7 +278,13 @@ class _SalonBody extends StatelessWidget {
               Icons.star_rounded,
               '${detail.ratingAvg.toStringAsFixed(detail.ratingAvg == detail.ratingAvg.roundToDouble() ? 0 : 1)} (${detail.reviewsCount} ${english ? 'reviews' : 'تقييم'})',
             ),
-            _meta(context, Icons.place_outlined, detail.place),
+            _meta(
+              context,
+              Icons.place_outlined,
+              detail.place,
+              key: const Key('salon-address'),
+              onTap: () => _openMaps(context, detail),
+            ),
             _meta(context, Icons.schedule_rounded, _hoursLabel(todayHour)),
             if (detail.verified)
               _meta(
@@ -373,7 +387,7 @@ class _SalonBody extends StatelessWidget {
             children: [
               for (final slot in times)
                 _TimeChip(
-                  label: slot,
+                  label: _format12(slot),
                   selected: slot == time,
                   onTap: () => onTime(slot),
                 ),
@@ -485,8 +499,12 @@ class _SalonBody extends StatelessWidget {
 
   List<DateTime> _upcomingDays() {
     final start = DateTime.now();
-    final today = DateTime(start.year, start.month, start.day);
-    return [for (var i = 0; i < 7; i++) today.add(Duration(days: i))];
+    // Use calendar-date construction — Duration(days:) shifts by 24h and can
+    // duplicate/skip weekdays across DST transitions (e.g. الخميس twice).
+    return [
+      for (var i = 0; i < 7; i++)
+        DateTime(start.year, start.month, start.day + i),
+    ];
   }
 
   List<String> _timesFor(DateTime date, List<SalonSpecialistItem> specialists) {
@@ -530,9 +548,31 @@ class _SalonBody extends StatelessWidget {
     if (hour == null || hour.isClosed || hour.opensAt == null) {
       return english ? 'Closed' : 'مغلق';
     }
-    return english
-        ? 'Open ${hour.opensAt}–${hour.closesAt}'
-        : 'مفتوح ${hour.opensAt}–${hour.closesAt}';
+    final open = _format12(hour.opensAt!);
+    final close = _format12(hour.closesAt ?? hour.opensAt!);
+    return english ? 'Open $open–$close' : 'مفتوح $open–$close';
+  }
+
+  Future<void> _openMaps(BuildContext context, SalonDetail salon) async {
+    final lat = salon.latitude;
+    final lng = salon.longitude;
+    final uri = lat != null && lng != null
+        ? Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng')
+        : Uri.parse(
+            'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(salon.mapQuery)}',
+          );
+    try {
+      await SalonScreen.openMaps(uri);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            english ? 'Could not open Google Maps.' : 'تعذر فتح خرائط جوجل.',
+          ),
+        ),
+      );
+    }
   }
 
   Widget _label(BuildContext context, String text) {
@@ -546,17 +586,42 @@ class _SalonBody extends StatelessWidget {
     );
   }
 
-  Widget _meta(BuildContext context, IconData icon, String text) {
-    return Row(
+  Widget _meta(
+    BuildContext context,
+    IconData icon,
+    String text, {
+    Key? key,
+    VoidCallback? onTap,
+  }) {
+    final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, color: SalonTheme.of(context).accent, size: 16),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(color: SalonTheme.of(context).soft, fontSize: 12),
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: onTap != null
+                  ? SalonTheme.of(context).accent
+                  : SalonTheme.of(context).soft,
+              fontSize: 12,
+              decoration: onTap != null ? TextDecoration.underline : null,
+              decorationColor: SalonTheme.of(context).accent,
+            ),
+          ),
         ),
       ],
+    );
+    if (onTap == null) return row;
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: row,
+      ),
     );
   }
 }
@@ -898,6 +963,16 @@ String _clock(int minutes) {
   final hour = (minutes ~/ 60).toString().padLeft(2, '0');
   final minute = (minutes % 60).toString().padLeft(2, '0');
   return '$hour:$minute';
+}
+
+String _format12(String clock24) {
+  final total = _minutes(clock24);
+  var hour = total ~/ 60;
+  final minute = (total % 60).toString().padLeft(2, '0');
+  final period = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  if (hour == 0) hour = 12;
+  return '$hour:$minute $period';
 }
 
 String _dayName(int day, bool english) {

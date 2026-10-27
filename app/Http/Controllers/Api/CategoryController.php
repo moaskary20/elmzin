@@ -12,7 +12,7 @@ class CategoryController extends Controller
     {
         $categories = Category::query()
             ->where('is_active', true)
-            ->withCount(['salons' => fn ($query) => $query->where('is_active', true)])
+            ->withCount(['listedSalons as salons_count' => fn ($query) => $query->where('salons.is_active', true)])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()

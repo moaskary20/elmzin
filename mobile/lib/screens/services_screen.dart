@@ -25,7 +25,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
   final _query = TextEditingController();
   List<ServiceOffer> _offers = ServiceOffer.fallback;
   List<HomeCategory> _categories = HomeCategory.fallback;
-  String? _category;
+  final Set<String> _selectedCategories = {};
   var _sort = _Sort.popular;
   var _homeOnly = false;
 
@@ -60,7 +60,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
   List<ServiceGroup> get _groups {
     final text = _query.text.trim();
     final offers = _offers.where((offer) {
-      if (_category != null && offer.categorySlug != _category) return false;
+      if (_selectedCategories.isNotEmpty &&
+          !_selectedCategories.contains(offer.categorySlug)) {
+        return false;
+      }
       if (_homeOnly && !offer.homeService) return false;
       if (text.isNotEmpty &&
           !'${offer.name} ${offer.description} ${offer.salonName}'.contains(
@@ -119,8 +122,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
   @override
   Widget build(BuildContext context) {
     final groups = _groups;
-    final filtering =
-        _query.text.trim().isNotEmpty || _category != null || _homeOnly;
+    final filtering = _query.text.trim().isNotEmpty ||
+        _selectedCategories.isNotEmpty ||
+        _homeOnly;
 
     return ColoredBox(
       key: const Key('services-screen'),
@@ -198,7 +202,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 english: _english,
                 onReset: () => setState(() {
                   _query.clear();
-                  _category = null;
+                  _selectedCategories.clear();
                   _homeOnly = false;
                 }),
               )
@@ -261,28 +265,64 @@ class _ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
+  void _toggleCategory(String? slug) {
+    setState(() {
+      if (slug == null) {
+        _selectedCategories.clear();
+        return;
+      }
+      if (!_selectedCategories.remove(slug)) {
+        _selectedCategories.add(slug);
+      }
+    });
+  }
+
   Widget _categoryRow() {
-    final items = [
-      (null, _english ? 'All' : 'الكل'),
-      for (final category in _categories)
-        (category.slug, category.nameFor(widget.locale.languageCode)),
-    ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final item in items)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: _Chip(
-                key: Key('services-category-${item.$1 ?? 'all'}'),
-                label: item.$2,
-                selected: _category == item.$1,
-                onTap: () => setState(() => _category = item.$1),
-              ),
-            ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _english
+              ? 'Categories — tap more than one'
+              : 'الأقسام — يمكن اختيار أكثر من قسم',
+          style: TextStyle(
+            color: AppColors.goldSoft,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final item in [
+                (null as String?, _english ? 'All' : 'الكل'),
+                for (final category in _categories)
+                  (
+                    category.slug,
+                    category.nameFor(widget.locale.languageCode),
+                  ),
+              ])
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: _Chip(
+                    key: Key('services-category-${item.$1 ?? 'all'}'),
+                    label: item.$2,
+                    selected: item.$1 == null
+                        ? _selectedCategories.isEmpty
+                        : _selectedCategories.contains(item.$1),
+                    icon: item.$1 != null &&
+                            _selectedCategories.contains(item.$1)
+                        ? Icons.check_rounded
+                        : null,
+                    onTap: () => _toggleCategory(item.$1),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -293,11 +333,13 @@ class _Chip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.icon,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -309,20 +351,29 @@ class _Chip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: selected ? AppColors.gold : AppColors.line,
             ),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? AppColors.ink : AppColors.gold,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 15, color: AppColors.ink),
+                const SizedBox(width: 5),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? AppColors.ink : AppColors.gold,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -734,7 +785,15 @@ class _OfferRow extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: cheapest ? AppColors.gold : AppColors.line,
+              color: cheapest
+                  ? AppColors.gold
+                  : switch (offer.categorySlug) {
+                      'women' => SalonPalette.blush.accent,
+                      'kids' => SalonPalette.kids.accent,
+                      'men' => AppColors.gold,
+                      _ => AppColors.line,
+                    },
+              width: cheapest || offer.categorySlug.isNotEmpty ? 1.4 : 1,
             ),
           ),
           child: Row(

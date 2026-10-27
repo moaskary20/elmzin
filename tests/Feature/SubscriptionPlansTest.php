@@ -176,6 +176,7 @@ class SubscriptionPlansTest extends TestCase
             'latitude' => 30,
             'longitude' => 31,
             'category_id' => $this->men->id,
+            'national_id' => '29501011234567',
             'services' => [['id' => $service->id, 'price' => 95]],
         ];
     }

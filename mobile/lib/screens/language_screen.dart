@@ -15,7 +15,6 @@ class LanguageScreen extends StatefulWidget {
 class _LanguageScreenState extends State<LanguageScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _entrance;
-  Locale? _locale;
 
   @override
   void initState() {
@@ -32,9 +31,9 @@ class _LanguageScreenState extends State<LanguageScreen>
     super.dispose();
   }
 
-  void _select(Locale locale) {
+  void _selectArabic() {
+    const locale = Locale('ar');
     AccountStore.instance.setLocale(locale.languageCode);
-    setState(() => _locale = locale);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 600),
@@ -73,9 +72,7 @@ class _LanguageScreenState extends State<LanguageScreen>
                     width: width,
                     height: constraints.maxHeight,
                     child: Directionality(
-                      textDirection: _locale?.languageCode == 'en'
-                          ? TextDirection.ltr
-                          : TextDirection.rtl,
+                      textDirection: TextDirection.rtl,
                       child: FadeTransition(
                         opacity: curved,
                         child: SlideTransition(
@@ -97,7 +94,7 @@ class _LanguageScreenState extends State<LanguageScreen>
                                 ),
                                 const SizedBox(height: 22),
                                 Text(
-                                  'اختر اللغة',
+                                  'لغة التطبيق',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: AppColors.gold,
@@ -108,7 +105,7 @@ class _LanguageScreenState extends State<LanguageScreen>
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Choose your language',
+                                  'لغة التطبيق العربية',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: AppColors.goldSoft,
@@ -119,16 +116,9 @@ class _LanguageScreenState extends State<LanguageScreen>
                                 const SizedBox(height: 36),
                                 _LanguageChoice(
                                   label: 'العربية',
-                                  caption: 'Arabic',
-                                  selected: _locale?.languageCode == 'ar',
-                                  onTap: () => _select(const Locale('ar')),
-                                ),
-                                const SizedBox(height: 14),
-                                _LanguageChoice(
-                                  label: 'English',
-                                  caption: 'الإنجليزية',
-                                  selected: _locale?.languageCode == 'en',
-                                  onTap: () => _select(const Locale('en')),
+                                  caption: 'اللغة المعتمدة',
+                                  selected: true,
+                                  onTap: _selectArabic,
                                 ),
                                 const Spacer(flex: 4),
                               ],

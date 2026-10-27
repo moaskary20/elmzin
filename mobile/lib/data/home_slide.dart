@@ -48,7 +48,7 @@ class HomeSlide {
 class SlidesApi {
   static const baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8010',
+    defaultValue: 'https://elmzin.caesar-agency.co.uk',
   );
 
   static Future<List<HomeSlide>> Function() load = _fetch;

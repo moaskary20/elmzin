@@ -7,6 +7,7 @@ use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Salon;
+use App\Models\SalonMedia;
 use App\Models\Service;
 use App\Models\Specialist;
 use App\Models\User;
@@ -24,6 +25,7 @@ class SalonController extends Controller
             ->where('is_active', true)
             ->with([
                 'category:id,name,slug',
+                'categories:id,name,slug',
                 'services' => fn ($query) => $query->where('is_active', true)->select('id', 'salon_id', 'name'),
             ])
             ->withMin(['services as min_price' => function ($query): void {
@@ -45,6 +47,10 @@ class SalonController extends Controller
                 'address' => $salon->address,
                 'category' => $salon->category?->name,
                 'category_slug' => $salon->category?->slug,
+                'category_slugs' => $salon->categories->pluck('slug')
+                    ->whenEmpty(fn () => collect([$salon->category?->slug])->filter())
+                    ->values()
+                    ->all(),
                 'rating_avg' => (float) $salon->rating_avg,
                 'reviews_count' => $salon->reviews_count,
                 'is_featured' => (bool) $salon->is_featured,
@@ -101,6 +107,8 @@ class SalonController extends Controller
 
         $salon->load([
             'category:id,name,slug',
+            'categories:id,name,slug',
+            'media',
             'workingHours',
             'services' => fn ($query) => $query->where('is_active', true)->orderBy('price')->orderBy('id'),
             'services.specialists:id',
@@ -119,12 +127,19 @@ class SalonController extends Controller
                 'id' => $salon->id,
                 'name' => $salon->name,
                 'image_url' => $this->imageUrl($request, $salon),
+                'media' => $this->mediaPayload($request, $salon),
                 'about' => $salon->about,
                 'city' => $salon->city,
                 'district' => $salon->district,
                 'address' => $salon->address,
+                'latitude' => $salon->latitude !== null ? (float) $salon->latitude : null,
+                'longitude' => $salon->longitude !== null ? (float) $salon->longitude : null,
                 'category' => $salon->category?->name,
                 'category_slug' => $salon->category?->slug,
+                'category_slugs' => $salon->categories->pluck('slug')
+                    ->whenEmpty(fn () => collect([$salon->category?->slug])->filter())
+                    ->values()
+                    ->all(),
                 'rating_avg' => (float) $salon->rating_avg,
                 'reviews_count' => $salon->reviews_count,
                 'verified' => $salon->verification_status === VerificationStatus::Verified,
@@ -285,6 +300,16 @@ class SalonController extends Controller
         return response()->file(Storage::disk('public')->path($salon->image));
     }
 
+    public function mediaFile(Salon $salon, SalonMedia $media)
+    {
+        abort_unless(
+            $salon->is_active && $media->salon_id === $salon->id && Storage::disk('public')->exists($media->path),
+            404,
+        );
+
+        return response()->file(Storage::disk('public')->path($media->path));
+    }
+
     private function imageUrl(Request $request, Salon $salon): ?string
     {
         if (! $salon->image || ! Storage::disk('public')->exists($salon->image)) {
@@ -292,6 +317,33 @@ class SalonController extends Controller
         }
 
         return $request->getSchemeAndHttpHost().'/api/salons/'.$salon->id.'/image';
+    }
+
+    /**
+     * @return list<array{id: int, type: string, url: string}>
+     */
+    private function mediaPayload(Request $request, Salon $salon): array
+    {
+        $host = $request->getSchemeAndHttpHost();
+        $items = $salon->media
+            ->filter(fn (SalonMedia $media): bool => Storage::disk('public')->exists($media->path))
+            ->map(fn (SalonMedia $media): array => [
+                'id' => $media->id,
+                'type' => $media->type,
+                'url' => $host.'/api/salons/'.$salon->id.'/media/'.$media->id,
+            ])
+            ->values()
+            ->all();
+
+        if ($items === [] && ($cover = $this->imageUrl($request, $salon))) {
+            return [[
+                'id' => 0,
+                'type' => 'image',
+                'url' => $cover,
+            ]];
+        }
+
+        return $items;
     }
 
     private function clock(mixed $value): ?string

@@ -7,6 +7,7 @@ import 'info_screen.dart';
 import 'login_screen.dart';
 import 'loyalty_screen.dart';
 import 'profile_edit_screen.dart';
+import 'register_screen.dart';
 import 'wallet_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -27,7 +28,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool get _english => Directionality.of(context) == TextDirection.ltr;
 
-  void _edit() => _push(const ProfileEditScreen());
+  void _edit() {
+    if (!AccountStore.instance.loggedIn) {
+      _push(const RegisterScreen());
+      return;
+    }
+    _push(const ProfileEditScreen());
+  }
 
   void _login() => _push(const LoginScreen());
 
@@ -45,17 +52,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _language() async {
-    final english = _english;
-    final selected = await showDialog<Locale>(
+    await showDialog<void>(
       context: context,
       builder: (context) {
         final tone = SettingsTone.of(AccountStore.instance.darkMode);
         return Directionality(
-          textDirection: english ? TextDirection.ltr : TextDirection.rtl,
+          textDirection: TextDirection.rtl,
           child: AlertDialog(
             backgroundColor: tone.panel,
             title: Text(
-              english ? 'Language' : 'اللغة',
+              'لغة التطبيق',
               style: TextStyle(color: tone.text, fontWeight: FontWeight.w700),
             ),
             content: Column(
@@ -65,15 +71,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   tone: tone,
                   key: const Key('language-ar'),
                   label: 'العربية',
-                  selected: !english,
-                  onTap: () => Navigator.pop(context, const Locale('ar')),
-                ),
-                _languageTile(
-                  tone: tone,
-                  key: const Key('language-en'),
-                  label: 'English',
-                  selected: english,
-                  onTap: () => Navigator.pop(context, const Locale('en')),
+                  selected: true,
+                  onTap: () => Navigator.pop(context),
                 ),
               ],
             ),
@@ -81,9 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-    if (selected == null) return;
-    AccountStore.instance.setLocale(selected.languageCode);
-    widget.onLocale(selected);
+    AccountStore.instance.setLocale('ar');
+    widget.onLocale(const Locale('ar'));
   }
 
   @override
@@ -94,7 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final account = AccountStore.instance;
         final english = _english;
         final tone = SettingsTone.of(account.darkMode);
-        final language = english ? 'English' : 'العربية';
+        const language = 'العربية';
 
         return ColoredBox(
           key: const Key('settings-root'),

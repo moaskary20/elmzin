@@ -120,6 +120,7 @@ class CatalogServicesTest extends TestCase
             'latitude' => 30,
             'longitude' => 31,
             'category_id' => $this->men->id,
+            'national_id' => '29501011234567',
         ];
 
         $this->postJson('/api/auth/register', $payload + ['services' => [['id' => $cut->id]]])

@@ -4,6 +4,7 @@ import '../data/home_category.dart';
 import '../data/home_salon.dart';
 import '../data/home_slide.dart';
 import '../theme/app_colors.dart';
+import '../widgets/kids_backdrop.dart';
 import '../widgets/places_section.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -32,7 +33,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   bool get _blush => widget.category.slug == 'women';
 
-  SalonPalette get _palette => _blush ? SalonPalette.blush : SalonPalette.gold;
+  bool get _kids => widget.category.slug == 'kids';
+
+  SalonPalette get _palette => _blush
+      ? SalonPalette.blush
+      : _kids
+      ? SalonPalette.kids
+      : SalonPalette.gold;
 
   @override
   void initState() {
@@ -60,7 +67,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   List<HomeSalon> _forCategory(List<HomeSalon> salons) {
     return salons
-        .where((salon) => salon.categorySlug == widget.category.slug)
+        .where((salon) => salon.belongsToCategory(widget.category.slug))
         .toList();
   }
 
@@ -78,10 +85,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final palette = _palette;
     final category = widget.category;
     final language = widget.locale.languageCode;
-    final titleColor = _blush ? palette.ink : palette.accent;
-
-    return ColoredBox(
-      color: palette.background,
+    final titleColor = _blush || _kids ? palette.ink : palette.accent;
+    final page = ColoredBox(
+      color: _kids ? Colors.transparent : palette.background,
       child: SafeArea(
         child: _loading
             ? Center(child: CircularProgressIndicator(color: palette.accent))
@@ -117,7 +123,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               color: titleColor.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Icon(_icon, color: titleColor, size: 28),
+                            child: _kids
+                                ? Image.asset(
+                                    'asset/kids/kids-bear.png',
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.contain,
+                                  )
+                                : Icon(_icon, color: titleColor, size: 28),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -136,7 +149,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 Text(
                                   category.descriptionFor(language),
                                   style: TextStyle(
-                                    color: _blush
+                                    color: _blush || _kids
                                         ? palette.ink.withValues(alpha: 0.78)
                                         : palette.soft,
                                     fontSize: 13,
@@ -149,7 +162,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                       ? '${_salons.length} salons'
                                       : '${_salons.length} صالونات',
                                   style: TextStyle(
-                                    color: _blush ? palette.ink : palette.deep,
+                                    color: _blush || _kids
+                                        ? palette.ink
+                                        : palette.deep,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -175,5 +190,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
       ),
     );
+
+    if (!_kids) return page;
+    return KidsBackdrop(child: page);
   }
 }

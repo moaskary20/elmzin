@@ -24,11 +24,23 @@ class AccountApi {
   static Future<void> Function({required String token, required String path})
   uploadSalonImage = _uploadSalonImage;
 
+  static Future<void> Function({
+    required String token,
+    required String path,
+    required String type,
+  })
+  uploadSalonMedia = _uploadSalonMedia;
+
+  static Future<void> Function({required String token, required String path})
+  uploadHealthCertificate = _uploadHealthCertificate;
+
   static void useDefaults() {
     show = _show;
     update = _update;
     uploadAvatar = _uploadAvatar;
     uploadSalonImage = _uploadSalonImage;
+    uploadSalonMedia = _uploadSalonMedia;
+    uploadHealthCertificate = _uploadHealthCertificate;
   }
 
   static Future<void> _uploadSalonImage({
@@ -46,6 +58,48 @@ class AccountApi {
     final response = await request.send().timeout(const Duration(seconds: 30));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AuthException('تعذر رفع صورة الصالون.');
+    }
+  }
+
+  static Future<void> _uploadSalonMedia({
+    required String token,
+    required String path,
+    required String type,
+  }) async {
+    if (!File(path).existsSync()) return;
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${SlidesApi.baseUrl}/api/account/salon/media'),
+    );
+    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['type'] = type;
+    request.files.add(await http.MultipartFile.fromPath('file', path));
+    final response = await request
+        .send()
+        .timeout(Duration(seconds: type == 'video' ? 90 : 30));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AuthException(
+        type == 'video' ? 'تعذر رفع فيديو الصالون.' : 'تعذر رفع صورة الصالون.',
+      );
+    }
+  }
+
+  static Future<void> _uploadHealthCertificate({
+    required String token,
+    required String path,
+  }) async {
+    if (!File(path).existsSync()) return;
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${SlidesApi.baseUrl}/api/account/salon/health-certificate'),
+    );
+    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath('image', path));
+    final response = await request.send().timeout(const Duration(seconds: 30));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AuthException('تعذر رفع الشهادة الصحية.');
     }
   }
 

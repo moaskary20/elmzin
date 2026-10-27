@@ -833,7 +833,7 @@ Future<void> showSubscriptionWelcome(
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'سيظهر صالونك للعملاء فور مراجعة الإدارة وتوثيقه، وسنرسل لك إشعاراً بذلك.',
+                        'سيظهر مركز التجميل للعملاء فور مراجعة الإدارة وتوثيقه، وسنرسل لك إشعاراً بذلك.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: tone.muted,

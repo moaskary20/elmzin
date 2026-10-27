@@ -84,7 +84,33 @@ body,
 
 .fi-sidebar-nav {
     padding-inline: 0 !important;
-    overflow-x: visible;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.fi-sidebar:hover .fi-sidebar-nav,
+.fi-sidebar:focus-within .fi-sidebar-nav {
+    scrollbar-color: var(--mz-gold) transparent;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+}
+
+.fi-sidebar:hover .fi-sidebar-nav::-webkit-scrollbar-thumb,
+.fi-sidebar:focus-within .fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--mz-gold);
 }
 
 .fi-sidebar-group-label,
@@ -145,7 +171,6 @@ body,
 }
 
 @media (min-width: 1024px) {
-    .fi-sidebar-nav,
     .fi-sidebar-nav-groups,
     .fi-sidebar-group {
         overflow: visible !important;

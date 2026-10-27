@@ -6,6 +6,7 @@ use App\Enums\BookingStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\BookingSetting;
 use App\Models\Salon;
 use App\Models\User;
 use App\Services\Notifier;
@@ -18,6 +19,13 @@ use Illuminate\Validation\ValidationException;
 class SalonBookingController extends Controller
 {
     private const RELATIONS = ['service', 'specialist', 'user', 'coupon'];
+
+    private ?BookingSetting $bookingSettings = null;
+
+    private function bookingSettings(): BookingSetting
+    {
+        return $this->bookingSettings ??= BookingSetting::current();
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -65,6 +73,12 @@ class SalonBookingController extends Controller
     {
         $salon = $this->salon($request);
         $this->owned($salon, $booking);
+
+        if ($message = $this->cancelLockMessage($booking)) {
+            throw ValidationException::withMessages([
+                'status' => $message,
+            ]);
+        }
 
         if (! $this->canCancel($booking)) {
             throw ValidationException::withMessages([
@@ -136,8 +150,26 @@ class SalonBookingController extends Controller
 
     private function canCancel(Booking $booking): bool
     {
-        return in_array($booking->status, [BookingStatus::Pending, BookingStatus::Confirmed], true)
-            && $this->moment($booking)->isFuture();
+        if (! in_array($booking->status, [BookingStatus::Pending, BookingStatus::Confirmed], true)) {
+            return false;
+        }
+
+        if (! $this->moment($booking)->isFuture()) {
+            return false;
+        }
+
+        return $this->cancelLockMessage($booking) === null;
+    }
+
+    private function cancelLockMessage(Booking $booking): ?string
+    {
+        $settings = $this->bookingSettings();
+
+        if (! $settings->salonCancelBlocked($booking)) {
+            return null;
+        }
+
+        return $settings->lockMessage();
     }
 
     /**
@@ -165,6 +197,8 @@ class SalonBookingController extends Controller
             ? $host.'/api/users/'.$customer->id.'/avatar'
             : null;
 
+        $lockMessage = $this->cancelLockMessage($booking);
+
         return [
             'id' => $booking->id,
             'status' => $booking->status->value,
@@ -183,6 +217,8 @@ class SalonBookingController extends Controller
             'coupon_code' => $booking->coupon?->code,
             'can_confirm' => $this->canConfirm($booking),
             'can_cancel' => $this->canCancel($booking),
+            'cancel_locked' => $lockMessage !== null,
+            'cancel_lock_message' => $lockMessage,
             'customer' => [
                 'name' => $customer?->name ?: $booking->customer_name,
                 'phone' => $booking->customer_phone ?: ($customer?->phone ?? ''),

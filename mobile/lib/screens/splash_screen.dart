@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/system_bars.dart';
 import 'language_screen.dart';
@@ -12,35 +14,30 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  late final VideoPlayerController _controller;
   var _left = false;
+  var _ready = false;
+  Timer? _timer;
+  Uint8List? _bytes;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset('asset/splash.mp4');
-    _controller.addListener(_onTick);
-    _controller
-        .initialize()
-        .then((_) {
-          if (!mounted) return;
-          setState(() {});
-          _controller.play();
-        })
-        .catchError((_) {
-          _openLanguage();
-        });
+    _load();
   }
 
-  void _onTick() {
-    final value = _controller.value;
-    if (value.hasError) {
-      _openLanguage();
-      return;
-    }
-    if (!value.isInitialized || value.duration == Duration.zero) return;
-    if (!value.isPlaying && value.position >= value.duration) {
-      _openLanguage();
+  Future<void> _load() async {
+    try {
+      final data = await rootBundle.load('asset/logo.png');
+      if (!mounted) return;
+      setState(() {
+        _bytes = data.buffer.asUint8List();
+        _ready = true;
+      });
+      _timer = Timer(const Duration(milliseconds: 3200), _openLanguage);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _ready = true);
+      _timer = Timer(const Duration(milliseconds: 1800), _openLanguage);
     }
   }
 
@@ -49,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
     _left = true;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
-        transitionDuration: const Duration(milliseconds: 700),
+        transitionDuration: const Duration(milliseconds: 600),
         pageBuilder: (_, _, _) => const LanguageScreen(),
         transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
@@ -60,34 +57,44 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void dispose() {
-    _controller.removeListener(_onTick);
-    _controller.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = _controller.value.size;
-    final ready = _controller.value.isInitialized;
+    final width = MediaQuery.sizeOf(context).width;
+    final logoSize = (width * 0.58).clamp(200.0, 280.0);
+    final bytes = _bytes;
 
     return SystemBars(
       child: Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: ColoredBox(
-            color: Colors.black,
-            child: ready
-                ? SizedBox.expand(
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: SizedBox(
-                        width: size.width,
-                        height: size.height,
-                        child: VideoPlayer(_controller),
-                      ),
+        backgroundColor: const Color(0xFF000000),
+        body: ColoredBox(
+          color: const Color(0xFF000000),
+          child: Center(
+            child: !_ready
+                ? const SizedBox.shrink()
+                : bytes == null
+                ? Text(
+                    'المزين',
+                    key: const Key('splash-logo-fallback'),
+                    style: TextStyle(
+                      color: const Color(0xFFD9B25B),
+                      fontSize: logoSize * 0.22,
+                      fontWeight: FontWeight.w800,
                     ),
                   )
-                : const SizedBox.expand(),
+                : Image.memory(
+                    bytes,
+                    key: const Key('splash-logo'),
+                    width: logoSize,
+                    height: logoSize,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    gaplessPlayback: true,
+                    semanticLabel: 'المزين',
+                  ),
           ),
         ),
       ),

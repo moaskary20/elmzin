@@ -6,6 +6,7 @@ use App\Enums\VerificationStatus;
 use App\Services\Notifier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -16,7 +17,9 @@ class Salon extends Model
         'user_id',
         'name',
         'image',
+        'health_certificate',
         'phone',
+        'national_id',
         'city',
         'district',
         'address',
@@ -47,12 +50,42 @@ class Salon extends Model
 
     protected static function booted(): void
     {
-        static::saved(fn (Salon $salon) => app(Notifier::class)->salonSaved($salon));
+        static::saved(function (Salon $salon): void {
+            app(Notifier::class)->salonSaved($salon);
+
+            if ($salon->category_id && ($salon->wasRecentlyCreated || $salon->wasChanged('category_id'))) {
+                $salon->categories()->syncWithoutDetaching([$salon->category_id]);
+            }
+        });
     }
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
+    public function media(): HasMany
+    {
+        return $this->hasMany(SalonMedia::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /** @return list<int> */
+    public function categoryIds(): array
+    {
+        $ids = $this->relationLoaded('categories')
+            ? $this->categories->pluck('id')->all()
+            : $this->categories()->pluck('categories.id')->all();
+
+        if ($this->category_id) {
+            $ids[] = (int) $this->category_id;
+        }
+
+        return array_values(array_unique(array_map('intval', $ids)));
     }
 
     public function owner(): BelongsTo

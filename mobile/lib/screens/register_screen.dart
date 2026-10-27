@@ -10,6 +10,7 @@ import 'package:muzayen/data/salon_catalog.dart';
 import 'package:muzayen/data/salon_profile.dart';
 import 'package:muzayen/data/subscription_plans.dart';
 import 'package:muzayen/screens/map_picker_screen.dart';
+import 'package:muzayen/theme/app_colors.dart';
 import 'package:muzayen/theme/settings_tone.dart';
 import 'package:muzayen/theme/system_bars.dart';
 import 'package:muzayen/widgets/account_avatar.dart';
@@ -24,7 +25,7 @@ enum _SalonStep {
   ),
   services(
     'الخدمات والأسعار',
-    'اختر قسم صالونك وحدد سعر كل خدمة.',
+    'اختر أقسام مركز التجميل وحدد سعر كل خدمة.',
     Icons.content_cut_rounded,
   ),
   team(
@@ -38,7 +39,7 @@ enum _SalonStep {
     Icons.schedule_rounded,
   ),
   details(
-    'بيانات الصالون',
+    'بيانات مركز التجميل',
     'الصورة وبيانات التواصل والعنوان.',
     Icons.storefront_outlined,
   );
@@ -64,14 +65,37 @@ class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   static Future<String?> Function(ImageSource source) pickPhoto = _pick;
+  static Future<List<String>> Function() pickSalonImages = _pickMany;
+  static Future<String?> Function() pickSalonVideo = _pickVideo;
 
-  static void useDefaultPicker() => pickPhoto = _pick;
+  static void useDefaultPicker() {
+    pickPhoto = _pick;
+    pickSalonImages = _pickMany;
+    pickSalonVideo = _pickVideo;
+  }
 
   static Future<String?> _pick(ImageSource source) async {
     final file = await ImagePicker().pickImage(
       source: source,
       maxWidth: 1200,
       imageQuality: 85,
+    );
+    return file?.path;
+  }
+
+  static Future<List<String>> _pickMany() async {
+    final files = await ImagePicker().pickMultiImage(
+      maxWidth: 1200,
+      imageQuality: 85,
+      limit: 8,
+    );
+    return [for (final file in files) file.path];
+  }
+
+  static Future<String?> _pickVideo() async {
+    final file = await ImagePicker().pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(seconds: 60),
     );
     return file?.path;
   }
@@ -155,23 +179,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  CatalogCategory? _category;
+  final List<int> _categoryIds = [];
   final Set<int> _services = {};
   final Map<int, TextEditingController> _prices = {};
   String? _photo;
-  String? _salonPhoto;
+  final List<String> _salonPhotos = [];
+  String? _salonVideo;
+  String? _healthCertificate;
+  final _nationalId = TextEditingController();
 
-  Future<void> _choosePhoto() => _pickInto(salon: false);
+  List<CatalogCategory> get _selectedCategories {
+    final catalog = _categories ?? const <CatalogCategory>[];
+    return [
+      for (final id in _categoryIds)
+        for (final category in catalog)
+          if (category.id == id) category,
+    ];
+  }
 
-  Future<void> _chooseSalonPhoto() => _pickInto(salon: true);
+  Future<void> _choosePhoto() => _pickInto('customer');
 
-  Future<void> _pickInto({required bool salon}) async {
-    final current = salon ? _salonPhoto : _photo;
+  Future<void> _chooseHealthCertificate() => _pickInto('health');
+
+  Future<void> _pickInto(String target) async {
+    final current = switch (target) {
+      'health' => _healthCertificate,
+      _ => _photo,
+    };
     void put(String? path) => setState(() {
-      if (salon) {
-        _salonPhoto = path;
-      } else {
-        _photo = path;
+      switch (target) {
+        case 'health':
+          _healthCertificate = path;
+        default:
+          _photo = path;
       }
       _error = null;
     });
@@ -237,6 +277,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _addSalonPhotos() async {
+    try {
+      final paths = await RegisterScreen.pickSalonImages();
+      if (paths.isEmpty || !mounted) return;
+      setState(() {
+        for (final path in paths) {
+          if (_salonPhotos.length >= 8) break;
+          if (!_salonPhotos.contains(path)) _salonPhotos.add(path);
+        }
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر فتح الصور.')));
+    }
+  }
+
+  Future<void> _addSalonVideo() async {
+    if (_salonVideo != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يمكنك رفع فيديو واحد فقط.')),
+      );
+      return;
+    }
+    try {
+      final path = await RegisterScreen.pickSalonVideo();
+      if (path == null || !mounted) return;
+      setState(() {
+        _salonVideo = path;
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر فتح الفيديو.')));
+    }
+  }
+
+  void _removeSalonPhotoAt(int index) {
+    setState(() {
+      _salonPhotos.removeAt(index);
+      _error = null;
+    });
+  }
+
   Widget _photoAction(
     BuildContext sheet,
     SettingsTone tone,
@@ -277,7 +365,185 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _salonPhotoPicker(SettingsTone tone) {
-    final path = _salonPhoto;
+    final hasMedia = _salonPhotos.isNotEmpty || _salonVideo != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Material(
+          color: tone.panel,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            key: const Key('register-salon-photo'),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: hasMedia ? tone.accent : tone.line,
+                width: hasMedia ? 1.5 : 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'صور وفيديو السليدر',
+                  key: const Key('register-salon-photo-label'),
+                  style: TextStyle(
+                    color: tone.text,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'حتى ٨ صور، وفيديو واحد اختياري داخل سليدر صفحة المركز',
+                  style: TextStyle(color: tone.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                if (_salonPhotos.isNotEmpty)
+                  SizedBox(
+                    height: 92,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _salonPhotos.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final path = _salonPhotos[index];
+                        final file = File(path);
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: file.existsSync()
+                                  ? Image.file(
+                                      file,
+                                      width: 92,
+                                      height: 92,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : ColoredBox(
+                                      color: tone.line,
+                                      child: SizedBox(
+                                        width: 92,
+                                        height: 92,
+                                        child: Icon(
+                                          Icons.broken_image_outlined,
+                                          color: tone.muted,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              left: 4,
+                              child: InkWell(
+                                onTap: () => _removeSalonPhotoAt(index),
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.55),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                if (_salonPhotos.isNotEmpty) const SizedBox(height: 12),
+                if (_salonVideo != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tone.background,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: tone.accent),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.videocam_rounded, color: tone.accent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'تم اختيار فيديو للسليدر',
+                            style: TextStyle(
+                              color: tone.text,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() {
+                            _salonVideo = null;
+                            _error = null;
+                          }),
+                          icon: Icon(Icons.delete_outline, color: tone.muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: const Key('register-salon-add-photos'),
+                        onPressed: _salonPhotos.length >= 8
+                            ? null
+                            : _addSalonPhotos,
+                        icon: Icon(Icons.add_photo_alternate_outlined,
+                            color: tone.accent),
+                        label: Text(
+                          _salonPhotos.isEmpty
+                              ? 'إضافة صور'
+                              : 'إضافة صور (${_salonPhotos.length}/8)',
+                          style: TextStyle(color: tone.text),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: tone.line),
+                          foregroundColor: tone.text,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: const Key('register-salon-add-video'),
+                        onPressed: _salonVideo == null ? _addSalonVideo : null,
+                        icon: Icon(Icons.video_library_outlined,
+                            color: tone.accent),
+                        label: Text(
+                          _salonVideo == null ? 'إضافة فيديو' : 'فيديو جاهز',
+                          style: TextStyle(color: tone.text),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: tone.line),
+                          foregroundColor: tone.text,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _healthCertificatePicker(SettingsTone tone) {
+    final path = _healthCertificate;
     final file = path == null ? null : File(path);
     final hasImage = file != null && file.existsSync();
     return Material(
@@ -285,10 +551,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        key: const Key('register-salon-photo'),
-        onTap: _chooseSalonPhoto,
+        key: const Key('register-health-certificate'),
+        onTap: _chooseHealthCertificate,
         child: Container(
-          height: 170,
+          height: 150,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
@@ -307,16 +573,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        path == null
-                            ? Icons.add_photo_alternate_outlined
-                            : Icons.check_circle_outline,
+                        Icons.health_and_safety_outlined,
                         color: tone.accent,
-                        size: 40,
+                        size: 38,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        path == null ? 'ارفع صورة الصالون' : 'تم اختيار الصورة',
-                        key: const Key('register-salon-photo-label'),
+                        path == null
+                            ? 'ارفع الشهادة الصحية'
+                            : 'تم اختيار الشهادة',
+                        key: const Key('register-health-certificate-label'),
                         style: TextStyle(
                           color: tone.text,
                           fontWeight: FontWeight.w700,
@@ -324,7 +590,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'صورة واضحة للواجهة أو من داخل الصالون',
+                        'صورة واضحة للشهادة الصحية سارية',
                         style: TextStyle(color: tone.muted, fontSize: 12),
                       ),
                     ],
@@ -376,11 +642,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
-  void _chooseCategory(CatalogCategory category) {
-    if (_category?.id == category.id) return;
+  void _toggleCategory(CatalogCategory category) {
     setState(() {
-      _category = category;
-      _services.clear();
+      if (_categoryIds.contains(category.id)) {
+        _categoryIds.remove(category.id);
+        for (final item in category.services) {
+          _services.remove(item.id);
+        }
+      } else {
+        _categoryIds.add(category.id);
+      }
       _error = null;
     });
   }
@@ -392,12 +663,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
+  Color _frameFor(String slug) {
+    return switch (slug) {
+      'women' => SalonPalette.blush.accent,
+      'kids' => SalonPalette.kids.accent,
+      _ => AppColors.gold,
+    };
+  }
+
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _phone.dispose();
     _password.dispose();
+    _nationalId.dispose();
     for (final controller in _prices.values) {
       controller.dispose();
     }
@@ -440,9 +720,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           return 'يجب الموافقة على قوانين الاشتراك أولاً.';
         }
       case _SalonStep.services:
-        if (_category == null) return 'اختر قسم الصالون أولاً.';
+        if (_categoryIds.isEmpty) return 'اختر قسماً واحداً على الأقل.';
         if (_services.isEmpty) {
-          return 'اختر خدمة واحدة على الأقل من خدمات القسم.';
+          return 'اختر خدمة واحدة على الأقل من خدمات الأقسام.';
         }
         final limit = _plan?.maxServices;
         if (limit != null && _services.length > limit) {
@@ -475,7 +755,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? _checkDetails() {
-    if (_type == 'salon' && _salonPhoto == null) return 'ارفع صورة الصالون.';
+    if (_type == 'salon' &&
+        _salonPhotos.isEmpty &&
+        _salonVideo == null) {
+      return 'ارفع صورة واحدة على الأقل أو فيديو للسليدر.';
+    }
+    if (_type == 'salon' && _healthCertificate == null) {
+      return 'ارفع صورة الشهادة الصحية.';
+    }
+    if (_type == 'salon') {
+      final nationalId = _normalizeDigits(_nationalId.text).trim();
+      if (!RegExp(r'^\d{14}$').hasMatch(nationalId)) {
+        return 'أدخل رقم البطاقة الشخصية ١٤ رقماً.';
+      }
+    }
     final address = _address;
     if (_name.text.trim().isEmpty ||
         !_email.text.trim().contains('@') ||
@@ -561,7 +854,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         notifications: AccountStore.instance.notifications,
         darkMode: AccountStore.instance.darkMode,
         locale: AccountStore.instance.locale == 'en' ? 'en' : 'ar',
-        categoryId: salon ? _category!.id : null,
+        categoryId: salon ? _categoryIds.first : null,
+        categoryIds: salon ? List<int>.from(_categoryIds) : null,
+        nationalId: salon ? _normalizeDigits(_nationalId.text).trim() : null,
         servicePrices: salon ? _servicePrices()! : const {},
         planId: plan?.id,
         acceptTerms: _terms,
@@ -582,12 +877,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
       AccountStore.instance.applySession(session);
       final photo = _type == 'customer' ? _photo : null;
       if (photo != null) unawaited(AccountStore.instance.setPhoto(photo));
-      final salonPhoto = salon ? _salonPhoto : null;
-      if (salonPhoto != null && session.token.isNotEmpty) {
+      if (salon && session.token.isNotEmpty) {
+        final photos = List<String>.from(_salonPhotos);
+        final video = _salonVideo;
+        unawaited(() async {
+          for (final path in photos) {
+            try {
+              await AccountApi.uploadSalonMedia(
+                token: session.token,
+                path: path,
+                type: 'image',
+              );
+            } catch (_) {}
+          }
+          if (video != null) {
+            try {
+              await AccountApi.uploadSalonMedia(
+                token: session.token,
+                path: video,
+                type: 'video',
+              );
+            } catch (_) {}
+          }
+        }());
+      }
+      final health = salon ? _healthCertificate : null;
+      if (health != null && session.token.isNotEmpty) {
         unawaited(
-          AccountApi.uploadSalonImage(
+          AccountApi.uploadHealthCertificate(
             token: session.token,
-            path: salonPhoto,
+            path: health,
           ).catchError((_) {}),
         );
       }
@@ -633,7 +952,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             title: step == null
                 ? null
                 : Text(
-                    'تسجيل صالون',
+                    'تسجيل مركز تجميل',
                     style: TextStyle(
                       color: tone.text,
                       fontSize: 17,
@@ -691,7 +1010,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           size: 112,
           logoKey: const Key('register-logo'),
           title: 'أنشئ حسابك',
-          subtitle: 'انضم إلى المزين واحجز في أفضل الصالونات بسهولة.',
+          subtitle: 'انضم إلى المزين واحجز في أفضل مراكز التجميل بسهولة.',
         ),
         const SizedBox(height: 24),
         Text(
@@ -720,7 +1039,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 tone,
                 key: const Key('register-salon'),
                 type: 'salon',
-                label: 'صالون',
+                label: 'مركز تجميل',
                 icon: Icons.storefront_outlined,
               ),
             ),
@@ -773,7 +1092,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'سجّل صالونك في ${_SalonStep.values.length} خطوات بسيطة',
+            'سجّل مركز التجميل في ${_SalonStep.values.length} خطوات بسيطة',
             style: TextStyle(
               color: tone.text,
               fontSize: 16,
@@ -905,6 +1224,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 16),
           _salonPhotoPicker(tone),
           const SizedBox(height: 14),
+          _healthCertificatePicker(tone),
+          const SizedBox(height: 14),
+          TextField(
+            key: const Key('register-national-id'),
+            controller: _nationalId,
+            keyboardType: TextInputType.number,
+            textDirection: TextDirection.ltr,
+            textAlign: TextAlign.right,
+            maxLength: 14,
+            style: TextStyle(color: tone.text),
+            cursorColor: tone.accent,
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+            decoration: _field(tone, 'رقم البطاقة الشخصية').copyWith(
+              counterText: '',
+              hintText: '١٤ رقماً',
+              hintStyle: TextStyle(color: tone.muted),
+              prefixIcon: Icon(
+                Icons.badge_outlined,
+                color: tone.accent,
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
           ..._accountFields(tone),
         ],
       },
@@ -1016,7 +1361,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         controller: _name,
         style: TextStyle(color: tone.text),
         cursorColor: tone.accent,
-        decoration: _field(tone, _type == 'salon' ? 'اسم الصالون' : 'الاسم'),
+        decoration: _field(tone, _type == 'salon' ? 'اسم مركز التجميل' : 'الاسم'),
       ),
       const SizedBox(height: 14),
       TextField(
@@ -1120,11 +1465,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  List<String> get _titleSuggestions => switch (_category?.slug) {
-    'women' => const ['خبيرة تجميل', 'مصففة شعر', 'أخصائية بشرة'],
-    'kids' => const ['حلاق أطفال', 'مصفف شعر'],
-    _ => const ['حلاق', 'حلاق أول', 'خبير لحية'],
-  };
+  List<String> get _titleSuggestions {
+    final titles = <String>{};
+    for (final category in _selectedCategories) {
+      titles.addAll(switch (category.slug) {
+        'women' => const ['خبيرة تجميل', 'مصففة شعر', 'أخصائية بشرة'],
+        'kids' => const ['حلاق أطفال', 'مصفف شعر'],
+        _ => const ['حلاق', 'حلاق أول', 'خبير لحية'],
+      });
+    }
+    if (titles.isEmpty) {
+      return const ['حلاق', 'حلاق أول', 'خبير لحية'];
+    }
+    return titles.toList();
+  }
 
   void _addMember() {
     final limit = _plan?.maxSpecialists;
@@ -1296,6 +1650,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<Widget> _hoursStep(SettingsTone tone) {
     final open = _hours.where((hour) => !hour.isClosed).length;
     return [
+      Text(
+        'فعّل اليوم ثم اضغط على وقت الفتح أو الإغلاق لتعديله.',
+        style: TextStyle(color: tone.muted, fontSize: 13, height: 1.45),
+      ),
+      const SizedBox(height: 10),
       Row(
         children: [
           Expanded(
@@ -1322,7 +1681,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           key: Key('register-hour-${hour.day}'),
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
           decoration: BoxDecoration(
             color: tone.panel,
             borderRadius: BorderRadius.circular(16),
@@ -1332,101 +1691,194 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   : tone.accent.withValues(alpha: 0.45),
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              SizedBox(
-                width: 76,
-                child: Text(
-                  hour.label,
-                  style: TextStyle(
-                    color: hour.isClosed ? tone.muted : tone.text,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: hour.isClosed
-                    ? Text('مغلق', style: TextStyle(color: tone.muted))
-                    : Row(
-                        children: [
-                          _timeChip(
-                            tone,
-                            Key('register-hour-open-${hour.day}'),
-                            hour.opensAt ?? '10:00',
-                            (value) =>
-                                _setHour(index, hour.copyWith(opensAt: value)),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Text(
-                              '–',
-                              style: TextStyle(color: tone.muted),
-                            ),
-                          ),
-                          _timeChip(
-                            tone,
-                            Key('register-hour-close-${hour.day}'),
-                            hour.closesAt ?? '22:00',
-                            (value) =>
-                                _setHour(index, hour.copyWith(closesAt: value)),
-                          ),
-                        ],
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      hour.label,
+                      style: TextStyle(
+                        color: hour.isClosed ? tone.muted : tone.text,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
                       ),
-              ),
-              Switch(
-                key: Key('register-hour-switch-${hour.day}'),
-                value: !hour.isClosed,
-                activeThumbColor: tone.accent,
-                inactiveThumbColor: tone.muted,
-                inactiveTrackColor: tone.line,
-                onChanged: (open) => _setHour(
-                  index,
-                  hour.copyWith(
-                    isClosed: !open,
-                    opensAt: hour.opensAt ?? '10:00',
-                    closesAt: hour.closesAt ?? '22:00',
+                    ),
                   ),
-                ),
+                  Text(
+                    hour.isClosed ? 'مغلق' : 'مفتوح',
+                    style: TextStyle(
+                      color: hour.isClosed ? tone.muted : tone.accent,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch(
+                    key: Key('register-hour-switch-${hour.day}'),
+                    value: !hour.isClosed,
+                    activeThumbColor: tone.accent,
+                    inactiveThumbColor: tone.muted,
+                    inactiveTrackColor: tone.line,
+                    onChanged: (open) => _setHour(
+                      index,
+                      hour.copyWith(
+                        isClosed: !open,
+                        opensAt: hour.opensAt ?? '10:00',
+                        closesAt: hour.closesAt ?? '22:00',
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (!hour.isClosed) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _timeField(
+                        tone,
+                        key: Key('register-hour-open-${hour.day}'),
+                        label: 'من',
+                        value: hour.opensAt ?? '10:00',
+                        onPicked: (value) => _setHour(
+                          index,
+                          hour.copyWith(opensAt: value),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _timeField(
+                        tone,
+                        key: Key('register-hour-close-${hour.day}'),
+                        label: 'إلى',
+                        value: hour.closesAt ?? '22:00',
+                        onPicked: (value) => _setHour(
+                          index,
+                          hour.copyWith(closesAt: value),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
     ];
   }
 
-  Widget _timeChip(
-    SettingsTone tone,
-    Key key,
-    String value,
+  String _formatHour12(String value) {
+    final parts = value.split(':');
+    final hour24 = int.tryParse(parts.first) ?? 0;
+    final minute = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+    final period = hour24 >= 12 ? 'م' : 'ص';
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    return '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+  }
+
+  Future<void> _pickHourTime(
+    String current,
     ValueChanged<String> onPicked,
-  ) {
-    return InkWell(
-      key: key,
-      borderRadius: BorderRadius.circular(10),
-      onTap: () async {
-        final parts = value.split(':');
-        final picked = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay(
-            hour: int.tryParse(parts.first) ?? 10,
-            minute: int.tryParse(parts.last) ?? 0,
+  ) async {
+    final parts = current.split(':');
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: int.tryParse(parts.first) ?? 10,
+        minute: int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0,
+      ),
+      helpText: 'اختر الوقت',
+      cancelText: 'إلغاء',
+      confirmText: 'تم',
+      hourLabelText: 'ساعة',
+      minuteLabelText: 'دقيقة',
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AppColors.gold,
+                  onPrimary: AppColors.ink,
+                  surface: AppColors.panel,
+                  onSurface: AppColors.gold,
+                ),
+                timePickerTheme: TimePickerThemeData(
+                  backgroundColor: AppColors.panel,
+                  hourMinuteTextColor: AppColors.gold,
+                  dialHandColor: AppColors.gold,
+                  dialBackgroundColor: AppColors.warm,
+                  entryModeIconColor: AppColors.gold,
+                ),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         );
-        if (picked == null) return;
-        onPicked(
-          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
-        );
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: tone.accent.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          value,
-          textDirection: TextDirection.ltr,
-          style: TextStyle(color: tone.accent, fontWeight: FontWeight.w700),
+    );
+    if (picked == null) return;
+    onPicked(
+      '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
+    );
+  }
+
+  Widget _timeField(
+    SettingsTone tone, {
+    required Key key,
+    required String label,
+    required String value,
+    required ValueChanged<String> onPicked,
+  }) {
+    return Material(
+      color: tone.background,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: key,
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _pickHourTime(value, onPicked),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: tone.accent.withValues(alpha: 0.45)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.schedule_rounded, color: tone.accent, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: tone.muted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatHour12(value),
+                      textDirection: TextDirection.rtl,
+                      style: TextStyle(
+                        color: tone.text,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.edit_outlined, color: tone.muted, size: 18),
+            ],
+          ),
         ),
       ),
     );
@@ -1572,11 +2024,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
         }
 
-        final category = _category;
+        final selected = _selectedCategories;
+        final totalServices = selected.fold<int>(
+          0,
+          (sum, category) => sum + category.services.length,
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _heading(tone, '1', 'اختر قسم الصالون'),
+            _heading(tone, '1', 'اختر أقسام مركز التجميل'),
+            const SizedBox(height: 6),
+            Text(
+              'يمكنك اختيار أكثر من قسم في نفس الوقت.',
+              style: TextStyle(color: tone.muted, fontSize: 12, height: 1.4),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -1590,9 +2051,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
               alignment: Alignment.topCenter,
-              child: category == null
+              child: selected.isEmpty
                   ? const SizedBox(width: double.infinity)
-                  : _servicesPicker(tone, category),
+                  : _servicesPicker(tone, selected, totalServices),
             ),
           ],
         );
@@ -1601,30 +2062,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _categoryCard(SettingsTone tone, CatalogCategory category) {
-    final selected = _category?.id == category.id;
+    final selected = _categoryIds.contains(category.id);
+    final frame = _frameFor(category.slug);
     final icon = switch (category.slug) {
       'women' => Icons.face_3_outlined,
       'kids' => Icons.child_care_outlined,
       _ => Icons.face_outlined,
     };
     return Material(
-      color: selected ? tone.accent : tone.panel,
+      color: selected ? frame : tone.panel,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         key: Key('register-category-${category.slug}'),
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _chooseCategory(category),
+        onTap: () => _toggleCategory(category),
         child: Container(
           height: 84,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: selected ? tone.accent : tone.line),
+            border: Border.all(color: frame, width: selected ? 1.6 : 1.2),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: selected ? tone.ink : tone.accent),
+              Icon(icon, color: selected ? tone.ink : frame),
               const SizedBox(height: 6),
               Text(
                 category.name,
@@ -1640,10 +2102,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _servicesPicker(SettingsTone tone, CatalogCategory category) {
-    final all =
-        category.services.isNotEmpty &&
-        _services.length == category.services.length;
+  Widget _servicesPicker(
+    SettingsTone tone,
+    List<CatalogCategory> categories,
+    int totalServices,
+  ) {
+    final all = totalServices > 0 && _services.length == totalServices;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1657,7 +2121,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (all) {
                   _services.clear();
                 } else {
-                  _services.addAll(category.services.map((item) => item.id));
+                  for (final category in categories) {
+                    _services.addAll(category.services.map((item) => item.id));
+                  }
                 }
                 _error = null;
               }),
@@ -1672,17 +2138,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
         Text(
-          'تم اختيار ${_services.length} من ${category.services.length} • اختر الخدمات التي يقدمها صالونك وحدد سعر كل خدمة.',
+          'تم اختيار ${_services.length} من $totalServices • كل إطار بلون قسمه، وحدد سعر كل خدمة.',
           key: const Key('register-services-count'),
           style: TextStyle(color: tone.muted, fontSize: 12, height: 1.5),
         ),
         const SizedBox(height: 10),
-        if (category.services.isEmpty)
-          Text(
-            'لا توجد خدمات في هذا القسم بعد.',
-            style: TextStyle(color: tone.muted),
+        for (final category in categories) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: _frameFor(category.slug),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  category.name,
+                  style: TextStyle(
+                    color: _frameFor(category.slug),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
           ),
-        for (final item in category.services) _serviceTile(tone, item),
+          if (category.services.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'لا توجد خدمات في هذا القسم بعد.',
+                style: TextStyle(color: tone.muted),
+              ),
+            ),
+          for (final item in category.services)
+            _serviceTile(tone, item, category.slug),
+        ],
       ],
     );
   }
@@ -1724,8 +2220,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _serviceTile(SettingsTone tone, CatalogItem item) {
+  Widget _serviceTile(SettingsTone tone, CatalogItem item, String slug) {
     final selected = _services.contains(item.id);
+    final frame = _frameFor(slug);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AnimatedContainer(
@@ -1734,8 +2231,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           color: tone.panel,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? tone.accent : tone.line,
-            width: selected ? 1.4 : 1,
+            color: selected ? frame : frame.withValues(alpha: 0.45),
+            width: selected ? 1.8 : 1.3,
           ),
         ),
         child: Column(
@@ -1753,7 +2250,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     horizontal: 12,
                     vertical: 10,
                   ),
-                  child: _serviceRow(tone, item, selected),
+                  child: _serviceRow(tone, item, selected, frame),
                 ),
               ),
             ),
@@ -1764,7 +2261,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _serviceRow(SettingsTone tone, CatalogItem item, bool selected) {
+  Widget _serviceRow(
+    SettingsTone tone,
+    CatalogItem item,
+    bool selected,
+    Color frame,
+  ) {
     return Row(
       children: [
         AnimatedContainer(
@@ -1772,9 +2274,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           width: 24,
           height: 24,
           decoration: BoxDecoration(
-            color: selected ? tone.accent : Colors.transparent,
+            color: selected ? frame : Colors.transparent,
             borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: tone.accent),
+            border: Border.all(color: frame),
           ),
           child: selected ? Icon(Icons.check, size: 16, color: tone.ink) : null,
         ),

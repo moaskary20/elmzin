@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/account_store.dart';
 import '../data/home_category.dart';
@@ -17,6 +18,7 @@ import 'salon_screen.dart';
 import 'search_screen.dart';
 import 'services_screen.dart';
 import 'settings_screen.dart';
+import 'shop_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.locale});
@@ -41,7 +43,13 @@ class _AppShellState extends State<AppShell> {
 
   bool get _women => _category?.slug == 'women' || _salonSlug == 'women';
 
-  SalonPalette get _palette => _women ? SalonPalette.blush : SalonPalette.gold;
+  bool get _kids => _category?.slug == 'kids' || _salonSlug == 'kids';
+
+  SalonPalette get _palette => _women
+      ? SalonPalette.blush
+      : _kids
+      ? SalonPalette.kids
+      : SalonPalette.gold;
 
   @override
   void initState() {
@@ -172,9 +180,11 @@ class _AppShellState extends State<AppShell> {
     final english = _locale.languageCode == 'en';
     final direction = english ? TextDirection.ltr : TextDirection.rtl;
     final light = !AccountStore.instance.darkMode;
-    final lightStatus = _women || light;
-    final statusColor = _women ? Colors.white : AppColors.black;
-    final navigationColor = _women ? Colors.white : AppColors.black;
+    final lightStatus = _women || _kids || light;
+    final statusColor = _women || _kids ? Colors.white : AppColors.black;
+    final navigationColor = _women || _kids
+        ? Colors.white
+        : AppColors.black;
     final statusInset = MediaQuery.paddingOf(context).top;
 
     final pages = [
@@ -192,6 +202,7 @@ class _AppShellState extends State<AppShell> {
       ),
       _belowHeader(SearchScreen(locale: _locale, onOpenSalon: _openSalon)),
       _belowHeader(ServicesScreen(locale: _locale, onOpenSalon: _openSalon)),
+      _belowHeader(ShopScreen(locale: _locale)),
       _belowHeader(
         SettingsScreen(onLocale: (locale) => setState(() => _locale = locale)),
       ),
@@ -204,90 +215,164 @@ class _AppShellState extends State<AppShell> {
       navigationColor: navigationColor,
       child: Directionality(
         textDirection: direction,
-        child: Scaffold(
-          backgroundColor: _palette.background,
-          body: Stack(
-            children: [
-              IndexedStack(index: _index, children: pages),
-              if (_category != null)
-                _overlay(
-                  CategoryScreen(
-                    category: _category!,
-                    locale: _locale,
-                    onBack: () => setState(() => _category = null),
-                    onOpenSalon: (id) => _openSalon(id, _category!.slug),
+        child: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            if (_cart) {
+              _closeCart();
+              return;
+            }
+            if (_notices) {
+              setState(() => _notices = false);
+              return;
+            }
+            if (_favorites) {
+              setState(() => _favorites = false);
+              return;
+            }
+            if (_salonId != null) {
+              _closeSalon();
+              return;
+            }
+            if (_category != null) {
+              setState(() => _category = null);
+              return;
+            }
+            final leave = await showDialog<bool>(
+              context: context,
+              builder: (dialog) => Directionality(
+                textDirection: direction,
+                child: AlertDialog(
+                  key: const Key('exit-app-dialog'),
+                  backgroundColor: AppColors.panel,
+                  title: Text(
+                    english ? 'Exit app?' : 'هل تريد الخروج؟',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
+                  content: Text(
+                    english
+                        ? 'Do you want to close المزين?'
+                        : 'هل تريد إغلاق تطبيق المزين؟',
+                    style: TextStyle(color: AppColors.goldSoft),
+                  ),
+                  actions: [
+                    TextButton(
+                      key: const Key('exit-app-cancel'),
+                      onPressed: () => Navigator.of(dialog).pop(false),
+                      child: Text(
+                        english ? 'Cancel' : 'إلغاء',
+                        style: TextStyle(color: AppColors.goldSoft),
+                      ),
+                    ),
+                    FilledButton(
+                      key: const Key('exit-app-confirm'),
+                      onPressed: () => Navigator.of(dialog).pop(true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.ink,
+                      ),
+                      child: Text(
+                        english ? 'Exit' : 'خروج',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
                 ),
-              if (_salonId != null)
-                _overlay(
-                  SalonScreen(
-                    salonId: _salonId!,
-                    locale: _locale,
+              ),
+            );
+            if (leave == true) {
+              await SystemNavigator.pop();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: _palette.background,
+            body: Stack(
+              children: [
+                IndexedStack(index: _index, children: pages),
+                if (_category != null)
+                  _overlay(
+                    CategoryScreen(
+                      category: _category!,
+                      locale: _locale,
+                      onBack: () => setState(() => _category = null),
+                      onOpenSalon: (id) => _openSalon(id, _category!.slug),
+                    ),
+                  ),
+                if (_salonId != null)
+                  _overlay(
+                    SalonScreen(
+                      salonId: _salonId!,
+                      locale: _locale,
+                      palette: _palette,
+                      onBack: _closeSalon,
+                      onOpenCart: _openCart,
+                    ),
+                  ),
+                if (_favorites)
+                  _overlay(
+                    FavoritesScreen(
+                      onBack: () => setState(() => _favorites = false),
+                      onOpenSalon: _openSalon,
+                    ),
+                  ),
+                if (_notices)
+                  _overlay(
+                    NotificationsScreen(
+                      onBack: () => setState(() => _notices = false),
+                      onOpenBookings: _bookingsFromNotices,
+                    ),
+                  ),
+                if (_cart)
+                  _overlay(
+                    CartScreen(
+                      key: ValueKey(_cartHighlight),
+                      palette: _palette,
+                      highlightKey: _cartHighlight,
+                      onBack: _closeCart,
+                      onBrowse: _browseFromCart,
+                      onOpenBookings: _bookingsFromCart,
+                    ),
+                  ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: HomeHeader(
+                    english: english,
                     palette: _palette,
-                    onBack: _closeSalon,
+                    onOpenFavorites: _openFavorites,
+                    onOpenNotifications: _openNotifications,
                     onOpenCart: _openCart,
                   ),
                 ),
-              if (_favorites)
-                _overlay(
-                  FavoritesScreen(
-                    onBack: () => setState(() => _favorites = false),
-                    onOpenSalon: _openSalon,
-                  ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: statusInset,
+                  child: ColoredBox(color: statusColor),
                 ),
-              if (_notices)
-                _overlay(
-                  NotificationsScreen(
-                    onBack: () => setState(() => _notices = false),
-                    onOpenBookings: _bookingsFromNotices,
-                  ),
-                ),
-              if (_cart)
-                _overlay(
-                  CartScreen(
-                    key: ValueKey(_cartHighlight),
-                    palette: _palette,
-                    highlightKey: _cartHighlight,
-                    onBack: _closeCart,
-                    onBrowse: _browseFromCart,
-                    onOpenBookings: _bookingsFromCart,
-                  ),
-                ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: HomeHeader(
-                  english: english,
-                  palette: _palette,
-                  onOpenFavorites: _openFavorites,
-                  onOpenNotifications: _openNotifications,
-                  onOpenCart: _openCart,
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: statusInset,
-                child: ColoredBox(color: statusColor),
-              ),
-            ],
-          ),
-          bottomNavigationBar: MuzayenNavBar(
-            index: _index,
-            english: english,
-            palette: _palette,
-            onChanged: (index) => setState(() {
-              if (index == 1) _bookingsTick++;
-              _index = index;
-              _salonId = null;
-              _salonSlug = null;
-              _category = null;
-              _favorites = false;
-              _notices = false;
-              _cart = false;
-            }),
+              ],
+            ),
+            bottomNavigationBar: MuzayenNavBar(
+              index: _index,
+              english: english,
+              palette: _palette,
+              onChanged: (index) => setState(() {
+                if (index == 1) _bookingsTick++;
+                _index = index;
+                _salonId = null;
+                _salonSlug = null;
+                _category = null;
+                _favorites = false;
+                _notices = false;
+                _cart = false;
+              }),
+            ),
           ),
         ),
       ),

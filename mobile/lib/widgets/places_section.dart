@@ -107,7 +107,7 @@ class _PlacesSectionState extends State<PlacesSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.showFeatured) ...[
-            _heading(_english ? 'Selected places' : 'أماكن مختارة'),
+            _heading(_english ? 'Muzayen picks' : 'ترشيحات المزين'),
             const SizedBox(height: 14),
             SizedBox(
               height: 280,
@@ -271,7 +271,7 @@ class _PlacesSectionState extends State<PlacesSection> {
   String get _serviceLabel {
     return switch (_place) {
       _PlaceType.home => _english ? 'Home' : 'منزلي',
-      _PlaceType.salon => _english ? 'In salon' : 'داخل الصالون',
+      _PlaceType.salon => _english ? 'Beauty center' : 'مركز تجميل',
       _PlaceType.any => _english ? 'Service type' : 'نوع الخدمة',
     };
   }
@@ -334,7 +334,7 @@ class _PlacesSectionState extends State<PlacesSection> {
         ),
         _option(
           key: _key('filter-salon'),
-          label: _english ? 'In salon' : 'داخل الصالون',
+          label: _english ? 'Beauty center' : 'مركز تجميل',
           selected: _place == _PlaceType.salon,
           onTap: () => setState(() {
             _place = _place == _PlaceType.salon
@@ -736,7 +736,7 @@ class _SalonCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       salon.place,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: palette.soft, fontSize: 12),
                     ),
@@ -752,10 +752,12 @@ class _SalonCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _badge(
-                          salon.offersHomeService
-                              ? (english ? 'Home' : 'منزلي')
-                              : (english ? 'In salon' : 'داخل الصالون'),
+                        Flexible(
+                          child: _badge(
+                            salon.offersHomeService
+                                ? (english ? 'Home' : 'منزلي')
+                                : (english ? 'Beauty center' : 'مركز تجميل'),
+                          ),
                         ),
                         if (amount != null) ...[
                           const SizedBox(width: 8),
@@ -793,6 +795,8 @@ class _SalonCard extends StatelessWidget {
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: palette.accent,
           fontSize: 11,

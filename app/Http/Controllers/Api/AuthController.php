@@ -41,10 +41,21 @@ class AuthController extends Controller
             'dark_mode' => ['sometimes', 'boolean'],
             'locale' => ['sometimes', Rule::in(['ar', 'en'])],
             'category_id' => [
-                'required_if:account_type,salon',
                 'nullable',
                 'integer',
                 Rule::exists('categories', 'id')->where('is_active', true),
+            ],
+            'category_ids' => ['nullable', 'array', 'min:1'],
+            'category_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('categories', 'id')->where('is_active', true),
+            ],
+            'national_id' => [
+                'required_if:account_type,salon',
+                'nullable',
+                'string',
+                'regex:/^\d{14}$/',
             ],
             'services' => ['required_if:account_type,salon', 'array', 'min:1'],
             'services.*.id' => ['required', 'integer', 'distinct'],
@@ -74,8 +85,11 @@ class AuthController extends Controller
             'plan_id.exists' => 'هذه الباقة غير متاحة.',
             'accept_terms.required' => 'يجب الموافقة على قوانين الاشتراك.',
             'accept_terms.accepted' => 'يجب الموافقة على قوانين الاشتراك.',
-            'category_id.required_if' => 'اختر قسم الصالون.',
             'category_id.exists' => 'القسم غير متاح.',
+            'category_ids.min' => 'اختر قسماً واحداً على الأقل.',
+            'category_ids.*.exists' => 'أحد الأقسام غير متاح.',
+            'national_id.required_if' => 'أدخل رقم البطاقة الشخصية.',
+            'national_id.regex' => 'رقم البطاقة الشخصية يجب أن يكون ١٤ رقماً.',
             'services.required_if' => 'اختر خدمة واحدة على الأقل.',
             'services.min' => 'اختر خدمة واحدة على الأقل.',
             'services.*.price.required' => 'حدد سعر كل خدمة مختارة.',
@@ -90,10 +104,24 @@ class AuthController extends Controller
         $role = $data['account_type'] === 'salon' ? UserRole::Salon : UserRole::Customer;
         $catalog = collect();
         $prices = [];
+        $categoryIds = [];
 
         $plan = null;
 
         if ($role === UserRole::Salon) {
+            $categoryIds = collect($data['category_ids'] ?? [])
+                ->whenEmpty(fn () => collect([$data['category_id'] ?? null])->filter())
+                ->map(fn ($id): int => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($categoryIds === []) {
+                throw ValidationException::withMessages([
+                    'category_ids' => 'اختر قسماً واحداً على الأقل.',
+                ]);
+            }
+
             $plan = filled($data['plan_id'] ?? null)
                 ? SubscriptionPlan::query()->find($data['plan_id'])
                 : SubscriptionPlan::query()->available()->first();
@@ -123,19 +151,19 @@ class AuthController extends Controller
                 ->all();
             $ids = array_keys($prices);
             $catalog = CatalogService::query()
-                ->where('category_id', $data['category_id'])
+                ->whereIn('category_id', $categoryIds)
                 ->where('is_active', true)
                 ->whereIn('id', $ids)
                 ->get();
 
             if ($catalog->count() !== count($ids)) {
                 throw ValidationException::withMessages([
-                    'services' => 'بعض الخدمات المختارة لا تتبع هذا القسم.',
+                    'services' => 'بعض الخدمات المختارة لا تتبع الأقسام المحددة.',
                 ]);
             }
         }
 
-        $user = DB::transaction(function () use ($data, $role, $request, $catalog, $prices, $plan): User {
+        $user = DB::transaction(function () use ($data, $role, $request, $catalog, $prices, $plan, $categoryIds): User {
             $user = User::query()->create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -154,10 +182,11 @@ class AuthController extends Controller
 
             if ($role === UserRole::Salon) {
                 $salon = Salon::query()->create([
-                    'category_id' => $data['category_id'],
+                    'category_id' => $categoryIds[0],
                     'user_id' => $user->id,
                     'name' => $user->name,
                     'phone' => $user->phone,
+                    'national_id' => $data['national_id'] ?? null,
                     'city' => $user->city ?: 'غير محدد',
                     'address' => $user->address,
                     'latitude' => $user->latitude,
@@ -166,6 +195,8 @@ class AuthController extends Controller
                     'verification_status' => VerificationStatus::Pending,
                     'is_active' => true,
                 ]);
+
+                $salon->categories()->sync($categoryIds);
 
                 if ($plan) {
                     app(SubscriptionService::class)->subscribe(

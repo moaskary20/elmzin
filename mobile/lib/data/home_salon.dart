@@ -14,11 +14,13 @@ class HomeSalon {
     required this.ratingAvg,
     required this.isFeatured,
     required this.offersHomeService,
+    this.address,
     this.latitude,
     this.longitude,
     this.minPrice,
     this.imageUrl,
     this.categorySlug = '',
+    this.categorySlugs = const [],
     this.verified = false,
     this.reviewsCount = 0,
     this.services = const [],
@@ -28,6 +30,7 @@ class HomeSalon {
   final String name;
   final String city;
   final String district;
+  final String? address;
   final double ratingAvg;
   final bool isFeatured;
   final bool offersHomeService;
@@ -36,9 +39,15 @@ class HomeSalon {
   final double? minPrice;
   final String? imageUrl;
   final String categorySlug;
+  final List<String> categorySlugs;
   final bool verified;
   final int reviewsCount;
   final List<String> services;
+
+  bool belongsToCategory(String slug) {
+    if (categorySlugs.contains(slug)) return true;
+    return categorySlug == slug;
+  }
 
   static const originLatitude = 30.0444;
   static const originLongitude = 31.2357;
@@ -54,7 +63,11 @@ class HomeSalon {
     'الجيزة': (30.0131, 31.2089),
   };
 
-  String get place => district.isEmpty ? city : '$district، $city';
+  String get place {
+    final line = address?.trim();
+    if (line != null && line.isNotEmpty) return line;
+    return district.isEmpty ? city : '$district، $city';
+  }
 
   double get distanceKm => distanceFrom(originLatitude, originLongitude);
 
@@ -194,6 +207,7 @@ class SalonsApi {
             name: '${row['name'] ?? ''}',
             city: '${row['city'] ?? ''}',
             district: '${row['district'] ?? ''}',
+            address: row['address'] as String?,
             ratingAvg: row['rating_avg'] is num
                 ? (row['rating_avg'] as num).toDouble()
                 : 0,
@@ -210,6 +224,15 @@ class SalonsApi {
                 : null,
             imageUrl: row['image_url'] as String?,
             categorySlug: '${row['category_slug'] ?? ''}',
+            categorySlugs: row['category_slugs'] is List
+                ? (row['category_slugs'] as List)
+                      .map((slug) => '$slug')
+                      .where((slug) => slug.isNotEmpty)
+                      .toList()
+                : [
+                    if ('${row['category_slug'] ?? ''}'.isNotEmpty)
+                      '${row['category_slug']}',
+                  ],
             verified: row['verified'] == true,
             reviewsCount: row['reviews_count'] is int
                 ? row['reviews_count'] as int

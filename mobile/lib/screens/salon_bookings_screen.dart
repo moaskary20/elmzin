@@ -109,6 +109,35 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
 
   Future<void> _cancel(SalonBooking booking) async {
     if (_busy.contains(booking.id)) return;
+    if (booking.cancelLocked) {
+      final message =
+          booking.cancelLockMessage ??
+          (_english
+              ? 'Cancellation is not allowed before the time set by admin.'
+              : 'لا يمكن إلغاء الطلب قبل الوقت المحدد في لوحة الإدارة.');
+      await showDialog<void>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          backgroundColor: AppColors.panel,
+          title: Text(
+            _english ? 'Cancellation unavailable' : 'تعذر الإلغاء',
+            style: TextStyle(color: AppColors.gold),
+          ),
+          content: Text(message, style: TextStyle(color: AppColors.goldSoft)),
+          actions: [
+            TextButton(
+              key: const Key('salon-cancel-locked-ok'),
+              onPressed: () => Navigator.pop(dialog),
+              child: Text(
+                _english ? 'OK' : 'حسناً',
+                style: TextStyle(color: AppColors.gold),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     final reason = await showDialog<String>(
       context: context,
       builder: (_) => _CancelDialog(booking: booking, english: _english),
@@ -169,7 +198,7 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
                         _confirm(booking);
                       }
                     : null,
-                onCancel: booking.canCancel
+                onCancel: booking.showsCancel
                     ? () {
                         Navigator.pop(sheet);
                         _cancel(booking);
@@ -330,7 +359,7 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
                     busy: _busy.contains(next.id),
                     onCopy: _copyPhone,
                     onConfirm: next.canConfirm ? () => _confirm(next) : null,
-                    onCancel: next.canCancel ? () => _cancel(next) : null,
+                    onCancel: next.showsCancel ? () => _cancel(next) : null,
                   ),
                 ),
               const SizedBox(height: 22),
@@ -370,7 +399,7 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
                       onConfirm: booking.canConfirm
                           ? () => _confirm(booking)
                           : null,
-                      onCancel: booking.canCancel
+                      onCancel: booking.showsCancel
                           ? () => _cancel(booking)
                           : null,
                     ),

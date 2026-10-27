@@ -9,6 +9,7 @@ use App\Models\Booking;
 use App\Models\LoyaltySetting;
 use App\Models\LoyaltyTransaction;
 use App\Models\Review;
+use App\Models\SalonMedia;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Services\Notifier;
@@ -218,17 +219,126 @@ class AccountController extends Controller
             'image.max' => 'حجم الصورة كبير، الحد ٦ ميجابايت.',
         ]);
 
-        if ($salon->image) {
-            Storage::disk('public')->delete($salon->image);
-        }
-
-        $salon->image = $request->file('image')->store('salons', 'public');
+        $path = $request->file('image')->store('salons', 'public');
+        $salon->image = $path;
         $salon->save();
+
+        $salon->media()->create([
+            'type' => 'image',
+            'path' => $path,
+            'sort_order' => (int) $salon->media()->max('sort_order') + 1,
+        ]);
 
         return response()->json([
             'data' => [
                 'id' => $salon->id,
                 'image_url' => $request->getSchemeAndHttpHost().'/api/salons/'.$salon->id.'/image',
+            ],
+        ]);
+    }
+
+    public function salonMedia(Request $request): JsonResponse
+    {
+        $user = $this->account($request);
+        $salon = $user->salon;
+
+        abort_if($salon === null, response()->json([
+            'message' => 'هذا الحساب ليس له صالون.',
+        ], 403));
+
+        $data = $request->validate([
+            'type' => ['required', 'in:image,video'],
+            'file' => [
+                'required',
+                'file',
+                $request->input('type') === 'video'
+                    ? 'mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm'
+                    : 'image',
+                $request->input('type') === 'video' ? 'max:51200' : 'max:6144',
+            ],
+        ], [
+            'type.required' => 'حدد نوع الملف.',
+            'type.in' => 'نوع الملف غير مدعوم.',
+            'file.required' => 'اختر الملف.',
+            'file.image' => 'الملف يجب أن يكون صورة.',
+            'file.mimetypes' => 'صيغة الفيديو غير مدعومة.',
+            'file.max' => $request->input('type') === 'video'
+                ? 'حجم الفيديو كبير، الحد ٥٠ ميجابايت.'
+                : 'حجم الصورة كبير، الحد ٦ ميجابايت.',
+        ]);
+
+        $type = $data['type'];
+        $images = $salon->media()->where('type', 'image')->count();
+        $videos = $salon->media()->where('type', 'video')->count();
+
+        if ($type === 'image' && $images >= 8) {
+            throw ValidationException::withMessages([
+                'file' => 'يمكنك رفع ٨ صور كحد أقصى.',
+            ]);
+        }
+
+        if ($type === 'video' && $videos >= 1) {
+            throw ValidationException::withMessages([
+                'file' => 'يمكنك رفع فيديو واحد فقط.',
+            ]);
+        }
+
+        $path = $request->file('file')->store(
+            $type === 'video' ? 'salons/videos' : 'salons',
+            'public',
+        );
+
+        if ($type === 'image' && blank($salon->image)) {
+            $salon->image = $path;
+            $salon->save();
+        }
+
+        /** @var SalonMedia $media */
+        $media = $salon->media()->create([
+            'type' => $type,
+            'path' => $path,
+            'sort_order' => (int) $salon->media()->max('sort_order') + 1,
+        ]);
+
+        $host = $request->getSchemeAndHttpHost();
+
+        return response()->json([
+            'data' => [
+                'id' => $media->id,
+                'type' => $media->type,
+                'url' => $host.'/api/salons/'.$salon->id.'/media/'.$media->id,
+            ],
+        ], 201);
+    }
+
+    public function salonHealthCertificate(Request $request): JsonResponse
+    {
+        $user = $this->account($request);
+        $salon = $user->salon;
+
+        abort_if($salon === null, response()->json([
+            'message' => 'هذا الحساب ليس له صالون.',
+        ], 403));
+
+        $request->validate([
+            'image' => ['required', 'image', 'max:6144'],
+        ], [
+            'image.required' => 'ارفع صورة الشهادة الصحية.',
+            'image.image' => 'الملف يجب أن يكون صورة.',
+            'image.max' => 'حجم الصورة كبير، الحد ٦ ميجابايت.',
+        ]);
+
+        if ($salon->health_certificate) {
+            Storage::disk('public')->delete($salon->health_certificate);
+        }
+
+        $salon->health_certificate = $request->file('image')->store('salons/health', 'public');
+        $salon->save();
+
+        return response()->json([
+            'data' => [
+                'id' => $salon->id,
+                'health_certificate' => true,
             ],
         ]);
     }

@@ -78,6 +78,8 @@ class AuthApi {
     required bool darkMode,
     required String locale,
     required int? categoryId,
+    List<int>? categoryIds,
+    String? nationalId,
     required Map<int, double> servicePrices,
     int? planId,
     bool acceptTerms,
@@ -141,6 +143,8 @@ class AuthApi {
     required bool darkMode,
     required String locale,
     required int? categoryId,
+    List<int>? categoryIds,
+    String? nationalId,
     required Map<int, double> servicePrices,
     int? planId,
     bool acceptTerms = false,
@@ -152,6 +156,10 @@ class AuthApi {
         'specialists': specialists,
       if (hours != null && hours.isNotEmpty) 'hours': hours,
       'category_id': ?categoryId,
+      if (categoryIds != null && categoryIds.isNotEmpty)
+        'category_ids': categoryIds,
+      if (nationalId != null && nationalId.isNotEmpty)
+        'national_id': nationalId,
       if (servicePrices.isNotEmpty)
         'services': [
           for (final entry in servicePrices.entries)

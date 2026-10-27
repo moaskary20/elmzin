@@ -30,6 +30,11 @@ const navDestinations = [
     labelEn: 'Services',
   ),
   NavDestination(
+    icon: Icons.shopping_bag_outlined,
+    label: 'التسوق',
+    labelEn: 'Shop',
+  ),
+  NavDestination(
     icon: Icons.settings_outlined,
     label: 'الإعدادات',
     labelEn: 'Settings',
@@ -107,7 +112,8 @@ class _MuzayenNavBarState extends State<MuzayenNavBar>
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
     final feminine = widget.palette.accent == SalonPalette.blush.accent;
-    final systemColor = feminine ? Colors.white : AppColors.black;
+    final kids = widget.palette.accent == SalonPalette.kids.accent;
+    final systemColor = kids || feminine ? Colors.white : AppColors.black;
     final barHeight = _barTop + _barBody;
 
     return Column(

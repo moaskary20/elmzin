@@ -69,12 +69,12 @@ class SalonProfileController extends Controller
         ]);
 
         $catalog = CatalogService::query()
-            ->where('category_id', $salon->category_id)
+            ->whereIn('category_id', $salon->categoryIds())
             ->where('is_active', true)
             ->find($data['catalog_service_id']);
 
         if (! $catalog) {
-            throw ValidationException::withMessages(['catalog_service_id' => 'هذه الخدمة غير متاحة لقسم صالونك.']);
+            throw ValidationException::withMessages(['catalog_service_id' => 'هذه الخدمة غير متاحة لأقسام صالونك.']);
         }
 
         if ($salon->services()->where('catalog_service_id', $catalog->id)->exists()) {
@@ -302,16 +302,17 @@ class SalonProfileController extends Controller
             ],
             'subscription' => $salon->currentSubscription()->with('plan')->first()?->toApiArray(),
             'catalog' => CatalogService::query()
-                ->where('category_id', $salon->category_id)
+                ->whereIn('category_id', $salon->categoryIds())
                 ->where('is_active', true)
                 ->whereNotIn('id', $taken)
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->get(['id', 'name', 'duration_minutes'])
+                ->get(['id', 'name', 'duration_minutes', 'category_id'])
                 ->map(fn (CatalogService $item): array => [
                     'id' => $item->id,
                     'name' => $item->name,
                     'duration_minutes' => $item->duration_minutes,
+                    'category_id' => $item->category_id,
                 ]),
         ], $status);
     }

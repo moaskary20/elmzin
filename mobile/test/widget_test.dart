@@ -33,6 +33,7 @@ import 'package:muzayen/screens/salon_screen.dart';
 import 'package:muzayen/screens/search_screen.dart';
 import 'package:muzayen/theme/app_colors.dart';
 import 'package:muzayen/theme/settings_tone.dart';
+import 'package:muzayen/widgets/kids_backdrop.dart';
 import 'package:muzayen/widgets/places_section.dart';
 import 'package:muzayen/widgets/salon_photo.dart';
 import 'package:muzayen/data/salon_detail.dart';
@@ -71,7 +72,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('العربية'), findsOneWidget);
-    expect(find.text('English'), findsOneWidget);
+    expect(find.text('لغة التطبيق العربية'), findsOneWidget);
+    expect(find.text('English'), findsNothing);
 
     await tester.tap(find.text('العربية'));
     await tester.pump();
@@ -104,7 +106,7 @@ void main() {
       ),
     );
     await tester.scrollUntilVisible(
-      find.text('أماكن مختارة'),
+      find.text('ترشيحات المزين'),
       400,
       scrollable: homeScroll,
     );
@@ -495,8 +497,9 @@ void main() {
           .widget<Text>(find.descendant(of: kids, matching: find.text('أطفال')))
           .style
           ?.color,
-      AppColors.gold,
+      SalonPalette.kids.ink,
     );
+    expect(find.byType(KidsBackdrop), findsOneWidget);
     expect(
       tester
           .widget<Icon>(
@@ -506,7 +509,7 @@ void main() {
             ),
           )
           .color,
-      AppColors.gold,
+      SalonPalette.kids.accent,
     );
   });
 
@@ -623,10 +626,13 @@ void main() {
     await tester.tap(find.byKey(const Key('settings-language')));
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.byKey(const Key('language-en')));
+    expect(find.byKey(const Key('language-ar')), findsOneWidget);
+    expect(find.byKey(const Key('language-en')), findsNothing);
+    await tester.tap(find.byKey(const Key('language-ar')));
     await tester.pump();
-    expect(find.text('Edit profile'), findsOneWidget);
-    expect(find.text('Guest'), findsOneWidget);
+    expect(find.text('تعديل الملف الشخصي'), findsOneWidget);
+    expect(find.text('زائر'), findsOneWidget);
+    expect(AccountStore.instance.locale, 'ar');
   });
 
   testWidgets('signup asks for a client or a salon then the same fields', (
@@ -665,7 +671,7 @@ void main() {
     );
 
     expect(find.text('عميل'), findsOneWidget);
-    expect(find.text('صالون'), findsOneWidget);
+    expect(find.text('مركز تجميل'), findsOneWidget);
     expect(find.byKey(const Key('register-name')), findsNothing);
 
     await tester.tap(find.byKey(const Key('register-client')));
@@ -735,10 +741,10 @@ void main() {
 
     await next();
     expect(find.text('الخطوة 2 من 5'), findsOneWidget);
-    expect(find.text('اختر قسم الصالون'), findsOneWidget);
+    expect(find.text('اختر أقسام مركز التجميل'), findsOneWidget);
     expect(find.byKey(const Key('register-service-1')), findsNothing);
     await next();
-    expect(find.text('اختر قسم الصالون أولاً.'), findsOneWidget);
+    expect(find.text('اختر قسماً واحداً على الأقل.'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('register-category-women')));
     await tester.pump();
@@ -821,22 +827,47 @@ void main() {
 
     await next();
     expect(find.text('الخطوة 5 من 5'), findsOneWidget);
-    expect(find.text('اسم الصالون'), findsOneWidget);
+    expect(find.text('اسم مركز التجميل'), findsOneWidget);
     expect(find.text('1 أخصائي'), findsOneWidget);
     expect(find.text('6 أيام عمل'), findsOneWidget);
     await tester.tap(find.byKey(const Key('register-submit')));
     await tester.pump();
-    expect(find.text('ارفع صورة الصالون.'), findsOneWidget);
+    expect(
+      find.text('ارفع صورة واحدة على الأقل أو فيديو للسليدر.'),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.byKey(const Key('register-salon-photo')));
+    RegisterScreen.pickSalonImages = () async =>
+        ['/tmp/muzayen-salon-1.jpg'];
+    await tester.tap(find.byKey(const Key('register-salon-add-photos')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byKey(const Key('register-photo-camera')));
+    expect(find.textContaining('إضافة صور (1/8)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('register-submit')));
+    await tester.pump();
+    expect(find.text('ارفع صورة الشهادة الصحية.'), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('register-health-certificate')),
+    );
+    await tester.tap(find.byKey(const Key('register-health-certificate')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(asked, ImageSource.camera);
-    expect(find.text('تم اختيار الصورة'), findsWidgets);
-    expect(find.text('تغيير'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('register-photo-gallery')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('تم اختيار الشهادة'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('register-submit')));
+    await tester.pump();
+    expect(find.text('أدخل رقم البطاقة الشخصية ١٤ رقماً.'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('register-national-id')),
+      '29501011234567',
+    );
+    await tester.pump();
   });
 
   testWidgets('the header opens favorites and notifications', (tester) async {
@@ -1148,11 +1179,19 @@ void main() {
     await tester.pump();
     expect(find.text('2 مكان'), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('search-category-men')));
+    await tester.pump();
+    expect(find.text('4 مكان'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('search-category-women')));
+    await tester.pump();
+    expect(find.text('2 مكان'), findsOneWidget);
+
+    expect(find.byKey(const Key('search-place-bar-home')), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('search-place-bar-home')));
     await tester.tap(find.byKey(const Key('search-place-bar-home')));
     await tester.pump();
-    expect(find.text('1 مكان'), findsOneWidget);
-    expect(find.text('لمسة جمال'), findsOneWidget);
+    expect(find.text('2 مكان'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('search-place-bar-salon')));
     await tester.pump();
@@ -1163,6 +1202,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('مكان الخدمة'), findsOneWidget);
+    expect(find.byKey(const Key('search-place-home')), findsOneWidget);
     await tester.tap(find.byKey(const Key('search-place-home')));
     await tester.pump();
     await tester.ensureVisible(find.byKey(const Key('search-filters-apply')));
@@ -1171,7 +1211,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('1 مكان'), findsOneWidget);
-    expect(find.text('لمسة جمال'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('search-place-bar-any')));
     await tester.pump();
@@ -1993,6 +2032,6 @@ const _freePlan = SubscriptionPlan(
   durationValue: 1,
   isFree: true,
   isFeatured: true,
-  features: ['ظهور صالونك لكل العملاء', 'استقبال الحجوزات'],
+  features: ['ظهور مركز التجميل لكل العملاء', 'استقبال الحجوزات'],
   terms: ['الاشتراك مجاني لمدة سنة.', 'الالتزام بمواعيد العملاء.'],
 );

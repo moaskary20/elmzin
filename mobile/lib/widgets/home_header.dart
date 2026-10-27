@@ -66,9 +66,15 @@ class _HomeHeaderState extends State<HomeHeader> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final greeting = _greeting(widget.english);
     final feminine = widget.palette.accent == SalonPalette.blush.accent;
-    final title = feminine ? widget.palette.accent : AppColors.gold;
-    final subtitle = feminine ? widget.palette.soft : AppColors.goldSoft;
-    final icon = feminine ? widget.palette.accent : AppColors.gold;
+    final kids = widget.palette.accent == SalonPalette.kids.accent;
+    final light = feminine || kids;
+    final title = feminine
+        ? widget.palette.accent
+        : kids
+        ? widget.palette.ink
+        : AppColors.gold;
+    final subtitle = light ? widget.palette.soft : AppColors.goldSoft;
+    final icon = light ? widget.palette.accent : AppColors.gold;
 
     return SafeArea(
       bottom: false,
@@ -85,10 +91,10 @@ class _HomeHeaderState extends State<HomeHeader> with TickerProviderStateMixin {
                   duration: const Duration(milliseconds: 320),
                   curve: Curves.easeOut,
                   decoration: BoxDecoration(
-                    color: feminine ? widget.palette.panel : AppColors.glass,
+                    color: light ? widget.palette.panel : AppColors.glass,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: feminine ? widget.palette.line : AppColors.line,
+                      color: light ? widget.palette.line : AppColors.line,
                     ),
                     boxShadow: [
                       BoxShadow(

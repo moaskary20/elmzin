@@ -72,6 +72,21 @@ class SalonPalette {
   /// Black and gold in dark mode, cream and gold in light mode.
   static const SalonPalette gold = _BrandPalette();
 
+  static const kids = SalonPalette(
+    background: Color(0xFFFFFFFF),
+    panel: Color(0xFFFFFFFF),
+    accent: Color(0xFF3A7CA5),
+    deep: Color(0xFF24597A),
+    ink: Color(0xFF1C2430),
+    soft: Color(0xFF5C6B7A),
+    line: Color(0x1A1C2430),
+    banner: Color(0xFFFFFFFF),
+    bannerEnd: Color(0xFFF3F7FB),
+    onBar: Color(0xFFFFFFFF),
+    circle: Color(0xFFFFFFFF),
+    onCircle: Color(0xFF3A7CA5),
+  );
+
   static const blush = SalonPalette(
     background: Color(0xFFFFF4F8),
     panel: Color(0xFFFFFFFF),

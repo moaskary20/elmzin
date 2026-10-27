@@ -96,7 +96,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final _map = Completer<GoogleMapController>();
   List<HomeSalon> _salons = HomeSalon.fallback;
   List<HomeCategory> _categories = HomeCategory.fallback;
-  String? _category;
+  final Set<String> _selectedCategories = {};
   var _sort = _Sort.nearest;
   var _filters = const _Filters();
   var _showMap = true;
@@ -210,7 +210,10 @@ class _SearchScreenState extends State<SearchScreen> {
     final text = _query.text.trim().toLowerCase();
     final filters = _filters;
     final rows = _salons.where((salon) {
-      if (_category != null && salon.categorySlug != _category) return false;
+      if (_selectedCategories.isNotEmpty &&
+          !_selectedCategories.any(salon.belongsToCategory)) {
+        return false;
+      }
       if (text.isNotEmpty) {
         final haystack = [
           salon.name,
@@ -266,9 +269,21 @@ class _SearchScreenState extends State<SearchScreen> {
   void _reset() {
     setState(() {
       _query.clear();
-      _category = null;
+      _selectedCategories.clear();
       _sort = _Sort.nearest;
       _filters = const _Filters();
+    });
+  }
+
+  void _toggleCategory(String? slug) {
+    setState(() {
+      if (slug == null) {
+        _selectedCategories.clear();
+        return;
+      }
+      if (!_selectedCategories.remove(slug)) {
+        _selectedCategories.add(slug);
+      }
     });
   }
 
@@ -298,7 +313,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final results = _results;
     final active =
         _filters.count +
-        (_category == null ? 0 : 1) +
+        _selectedCategories.length +
         (_query.text.trim().isEmpty ? 0 : 1);
 
     return ColoredBox(
@@ -566,6 +581,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 label: label,
                 icon: icon,
                 selected: _filters.place == place,
+                enabled: place != _PlaceType.home,
                 onTap: () =>
                     setState(() => _filters = _filters.withPlace(place)),
               ),
@@ -576,25 +592,44 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _categoryRow() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _Chip(
-            key: const Key('search-category-all'),
-            label: _english ? 'All' : 'الكل',
-            selected: _category == null,
-            onTap: () => setState(() => _category = null),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _english
+              ? 'Categories — tap more than one'
+              : 'الأقسام — يمكن اختيار أكثر من قسم',
+          style: TextStyle(
+            color: AppColors.goldSoft,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
           ),
-          for (final category in _categories)
-            _Chip(
-              key: Key('search-category-${category.slug}'),
-              label: category.nameFor(widget.locale.languageCode),
-              selected: _category == category.slug,
-              onTap: () => setState(() => _category = category.slug),
-            ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _Chip(
+                key: const Key('search-category-all'),
+                label: _english ? 'All' : 'الكل',
+                selected: _selectedCategories.isEmpty,
+                onTap: () => _toggleCategory(null),
+              ),
+              for (final category in _categories)
+                _Chip(
+                  key: Key('search-category-${category.slug}'),
+                  label: category.nameFor(widget.locale.languageCode),
+                  selected: _selectedCategories.contains(category.slug),
+                  icon: _selectedCategories.contains(category.slug)
+                      ? Icons.check_rounded
+                      : null,
+                  onTap: () => _toggleCategory(category.slug),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -800,27 +835,32 @@ class _PlaceSegment extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.enabled = true,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected ? AppColors.ink : AppColors.gold;
+    final active = enabled && selected;
+    final foreground = !enabled
+        ? AppColors.goldSoft.withValues(alpha: 0.55)
+        : (active ? AppColors.ink : AppColors.gold);
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
           decoration: BoxDecoration(
-            color: selected ? AppColors.gold : Colors.transparent,
+            color: active ? AppColors.gold : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -856,6 +896,7 @@ class _Chip extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.outlined = false,
+    this.enabled = true,
   });
 
   final String label;
@@ -863,19 +904,23 @@ class _Chip extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
   final bool outlined;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected ? AppColors.ink : AppColors.gold;
+    final active = enabled && selected;
+    final foreground = !enabled
+        ? AppColors.goldSoft.withValues(alpha: 0.55)
+        : (active ? AppColors.ink : AppColors.gold);
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 8),
       child: Material(
-        color: selected
+        color: active
             ? AppColors.gold
             : (outlined ? Colors.transparent : AppColors.panel),
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
-          onTap: onTap,
+          onTap: enabled ? onTap : null,
           borderRadius: BorderRadius.circular(20),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -883,7 +928,11 @@ class _Chip extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: selected ? AppColors.gold : AppColors.line,
+                color: active
+                    ? AppColors.gold
+                    : (enabled
+                          ? AppColors.line
+                          : AppColors.line.withValues(alpha: 0.5)),
               ),
             ),
             child: Row(
@@ -1155,6 +1204,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   label: _english ? 'At home' : 'في المنزل',
                   icon: Icons.home_rounded,
                   selected: _place == _PlaceType.home,
+                  enabled: false,
                   onTap: () => setState(() => _place = _PlaceType.home),
                 ),
                 _Chip(

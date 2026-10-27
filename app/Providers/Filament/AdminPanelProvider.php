@@ -40,6 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'المستخدمون',
+                'التسوق',
                 'العروض',
                 'الاشتراكات',
                 'تطبيق الموبايل',

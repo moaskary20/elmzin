@@ -191,8 +191,8 @@ SupportPage fallbackPage(String slug) {
         SupportBlock(
           title: 'كيف أغيّر اللغة؟',
           titleEn: 'How do I change the language?',
-          body: 'من الإعدادات اختر اللغة، ثم العربية أو الإنجليزية.',
-          bodyEn: 'Open Settings, then Language, and choose Arabic or English.',
+          body: 'لغة التطبيق المتاحة حاليًا هي العربية.',
+          bodyEn: 'The app is currently available in Arabic only.',
         ),
       ],
     ),

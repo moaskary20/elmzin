@@ -6,6 +6,28 @@ import 'package:http/http.dart' as http;
 import 'account_store.dart';
 import 'home_slide.dart';
 
+class SalonMediaItem {
+  const SalonMediaItem({
+    required this.id,
+    required this.type,
+    required this.url,
+  });
+
+  final int id;
+  final String type;
+  final String url;
+
+  bool get isVideo => type == 'video';
+
+  factory SalonMediaItem.fromJson(Map<String, dynamic> row) {
+    return SalonMediaItem(
+      id: row['id'] is num ? (row['id'] as num).toInt() : 0,
+      type: '${row['type'] ?? 'image'}',
+      url: '${row['url'] ?? ''}',
+    );
+  }
+}
+
 class SalonHour {
   const SalonHour({
     required this.day,
@@ -81,12 +103,16 @@ class SalonDetail {
     required this.about,
     required this.city,
     required this.district,
+    this.address,
+    this.latitude,
+    this.longitude,
     required this.category,
     required this.categorySlug,
     required this.ratingAvg,
     required this.reviewsCount,
     required this.verified,
     this.imageUrl,
+    this.media = const [],
     required this.hours,
     required this.services,
     required this.specialists,
@@ -99,19 +125,33 @@ class SalonDetail {
   final String about;
   final String city;
   final String district;
+  final String? address;
+  final double? latitude;
+  final double? longitude;
   final String category;
   final String categorySlug;
   final double ratingAvg;
   final int reviewsCount;
   final bool verified;
   final String? imageUrl;
+  final List<SalonMediaItem> media;
   final List<SalonHour> hours;
   final List<SalonServiceItem> services;
   final List<SalonSpecialistItem> specialists;
   final List<SalonReviewItem> reviews;
   final List<BookedSlot> booked;
 
-  String get place => district.isEmpty ? city : '$district · $city';
+  String get place {
+    final line = address?.trim();
+    if (line != null && line.isNotEmpty) return line;
+    return district.isEmpty ? city : '$district · $city';
+  }
+
+  String get mapQuery {
+    final line = address?.trim();
+    if (line != null && line.isNotEmpty) return line;
+    return district.isEmpty ? city : '$district · $city';
+  }
 
   String eyebrow(String languageCode) {
     if (languageCode == 'en') {
@@ -262,6 +302,13 @@ class SalonDetailApi {
       about: '${row['about'] ?? ''}',
       city: '${row['city'] ?? ''}',
       district: '${row['district'] ?? ''}',
+      address: row['address'] as String?,
+      latitude: row['latitude'] is num
+          ? (row['latitude'] as num).toDouble()
+          : null,
+      longitude: row['longitude'] is num
+          ? (row['longitude'] as num).toDouble()
+          : null,
       category: '${row['category'] ?? ''}',
       categorySlug: '${row['category_slug'] ?? ''}',
       ratingAvg: row['rating_avg'] is num
@@ -272,16 +319,29 @@ class SalonDetailApi {
           : 0,
       verified: row['verified'] == true,
       imageUrl: row['image_url'] as String?,
-      hours: maps(row['hours'])
-          .map(
-            (hour) => SalonHour(
-              day: hour['day'] is int ? hour['day'] as int : 0,
-              opensAt: hour['opens_at'] as String?,
-              closesAt: hour['closes_at'] as String?,
-              isClosed: hour['is_closed'] == true,
-            ),
-          )
-          .toList(),
+      media: () {
+        final items = maps(row['media'])
+            .map(SalonMediaItem.fromJson)
+            .where((item) => item.url.isNotEmpty)
+            .toList();
+        if (items.isNotEmpty) return items;
+        final cover = row['image_url'] as String?;
+        if (cover == null || cover.isEmpty) return const <SalonMediaItem>[];
+        return [SalonMediaItem(id: 0, type: 'image', url: cover)];
+      }(),
+      hours: () {
+        final byDay = <int, SalonHour>{};
+        for (final hour in maps(row['hours'])) {
+          final day = hour['day'] is num ? (hour['day'] as num).toInt() : 0;
+          byDay[day] = SalonHour(
+            day: day,
+            opensAt: hour['opens_at'] as String?,
+            closesAt: hour['closes_at'] as String?,
+            isClosed: hour['is_closed'] == true,
+          );
+        }
+        return byDay.values.toList();
+      }(),
       services: maps(row['services'])
           .map(
             (service) => SalonServiceItem(

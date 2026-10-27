@@ -29,7 +29,7 @@ class AccountStore extends ChangeNotifier {
   String? token;
   String? photoPath;
   String? photoUrl;
-  String locale = '';
+  String locale = 'ar';
   bool loggedIn = false;
   bool notifications = true;
   bool darkMode = true;
@@ -53,9 +53,8 @@ class AccountStore extends ChangeNotifier {
       token = prefs.getString(_tokenKey);
       photoPath = prefs.getString(_photoKey);
       photoUrl = prefs.getString(_photoUrlKey);
-      if (locale.isEmpty) {
-        locale = prefs.getString(_localeKey) ?? '';
-      }
+      locale = 'ar';
+      await prefs.setString(_localeKey, locale);
       loggedIn = prefs.getBool(_loggedInKey) ?? false;
       notifications = prefs.getBool(_notificationsKey) ?? true;
       darkMode = prefs.getBool(_darkModeKey) ?? true;
@@ -109,9 +108,7 @@ class AccountStore extends ChangeNotifier {
     if (session.token.isNotEmpty) token = session.token;
     notifications = session.notifications;
     darkMode = session.darkMode;
-    if (session.locale == 'ar' || session.locale == 'en') {
-      locale = session.locale;
-    }
+    locale = 'ar';
     photoUrl = session.avatarUrl;
     walletBalance = session.walletBalance;
     loyaltyPoints = session.loyaltyPoints;
@@ -132,9 +129,7 @@ class AccountStore extends ChangeNotifier {
       role = session.role;
       notifications = session.notifications;
       darkMode = session.darkMode;
-      if (session.locale == 'ar' || session.locale == 'en') {
-        locale = session.locale;
-      }
+      locale = 'ar';
       photoUrl = session.avatarUrl;
       walletBalance = session.walletBalance;
       loyaltyPoints = session.loyaltyPoints;
@@ -174,8 +169,8 @@ class AccountStore extends ChangeNotifier {
   }
 
   void setLocale(String code) {
-    if (code != 'ar' && code != 'en') return;
-    locale = code;
+    if (code != 'ar') return;
+    locale = 'ar';
     notifyListeners();
     _save();
     _pushSettings();
@@ -223,7 +218,7 @@ class AccountStore extends ChangeNotifier {
     photoUrl = null;
     walletBalance = 0;
     loyaltyPoints = 0;
-    locale = '';
+    locale = 'ar';
     loggedIn = false;
     notifications = true;
     darkMode = true;
@@ -238,7 +233,7 @@ class AccountStore extends ChangeNotifier {
         token: current,
         notifications: notifications,
         darkMode: darkMode,
-        locale: locale == 'en' ? 'en' : 'ar',
+        locale: 'ar',
       ),
     );
   }

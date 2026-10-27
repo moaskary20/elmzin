@@ -22,6 +22,8 @@ class SalonBooking {
     this.couponCode,
     this.canConfirm = false,
     this.canCancel = false,
+    this.cancelLocked = false,
+    this.cancelLockMessage,
     this.notes,
     this.createdAt,
     this.customerEmail,
@@ -50,6 +52,8 @@ class SalonBooking {
   final String? couponCode;
   final bool canConfirm;
   final bool canCancel;
+  final bool cancelLocked;
+  final String? cancelLockMessage;
   final String? notes;
   final DateTime? createdAt;
   final String? customerEmail;
@@ -72,6 +76,8 @@ class SalonBooking {
   }
 
   bool get active => status == 'pending' || status == 'confirmed';
+
+  bool get showsCancel => canCancel || cancelLocked;
 
   bool get upcoming {
     final moment = at;
@@ -104,6 +110,8 @@ class SalonBooking {
       couponCode: text(row['coupon_code']),
       canConfirm: row['can_confirm'] == true,
       canCancel: row['can_cancel'] == true,
+      cancelLocked: row['cancel_locked'] == true,
+      cancelLockMessage: text(row['cancel_lock_message']),
       notes: text(row['notes']),
       createdAt: DateTime.tryParse('${row['created_at'] ?? ''}')?.toLocal(),
       customerName: '${customer['name'] ?? ''}',

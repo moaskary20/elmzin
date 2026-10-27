@@ -8,6 +8,7 @@ use App\Filament\Resources\Salons\Pages\CreateSalon;
 use App\Filament\Resources\Salons\Pages\EditSalon;
 use App\Filament\Resources\Salons\Pages\ListSalons;
 use App\Filament\Resources\Salons\RelationManagers\BookingsRelationManager;
+use App\Filament\Resources\Salons\RelationManagers\MediaRelationManager;
 use App\Filament\Resources\Salons\RelationManagers\ReviewsRelationManager;
 use App\Filament\Resources\Salons\RelationManagers\ServicesRelationManager;
 use App\Filament\Resources\Salons\RelationManagers\SpecialistsRelationManager;
@@ -86,10 +87,24 @@ class SalonResource extends Resource
                         ->rows(3)
                         ->columnSpanFull(),
                     FileUpload::make('image')
-                        ->label('صورة الصالون')
+                        ->label('صورة الغلاف')
+                        ->helperText('الصورة الرئيسية. لإضافة عدة صور أو فيديو استخدم تبويب «سليدر الصور والفيديو».')
                         ->image()
                         ->disk('public')
                         ->directory('salons')
+                        ->columnSpanFull(),
+                    TextInput::make('national_id')
+                        ->label('رقم البطاقة الشخصية')
+                        ->tel()
+                        ->maxLength(14)
+                        ->copyable(),
+                    FileUpload::make('health_certificate')
+                        ->label('الشهادة الصحية')
+                        ->image()
+                        ->disk('public')
+                        ->directory('salons/health')
+                        ->openable()
+                        ->downloadable()
                         ->columnSpanFull(),
                 ])
                 ->columns(2)
@@ -280,6 +295,7 @@ class SalonResource extends Resource
     public static function getRelations(): array
     {
         return [
+            'media' => MediaRelationManager::class,
             'hours' => WorkingHoursRelationManager::class,
             'services' => ServicesRelationManager::class,
             'specialists' => SpecialistsRelationManager::class,
