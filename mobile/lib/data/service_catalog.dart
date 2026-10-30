@@ -21,7 +21,11 @@ class ServiceOffer {
     this.salonNameEn,
     this.bookings = 0,
     this.city = '',
+    this.cityEn,
     this.district = '',
+    this.districtEn,
+    this.address,
+    this.addressEn,
     this.rating = 0,
     this.homeService = false,
     this.verified = false,
@@ -41,7 +45,11 @@ class ServiceOffer {
   final String? salonNameEn;
   final String categorySlug;
   final String city;
+  final String? cityEn;
   final String district;
+  final String? districtEn;
+  final String? address;
+  final String? addressEn;
   final double rating;
   final bool homeService;
   final bool verified;
@@ -51,8 +59,12 @@ class ServiceOffer {
 
   String placeFor(bool english) => placeLineFor(
         english: english,
+        address: address,
+        addressEn: addressEn,
         city: city,
+        cityEn: cityEn,
         district: district,
+        districtEn: districtEn,
       );
 
   String nameFor(bool english) => localized(name, nameEn, english);
@@ -83,7 +95,11 @@ class ServiceOffer {
       salonNameEn: salon['name_en'] as String?,
       categorySlug: '${salon['category_slug'] ?? ''}',
       city: '${salon['city'] ?? ''}',
+      cityEn: salon['city_en'] as String?,
       district: '${salon['district'] ?? ''}',
+      districtEn: salon['district_en'] as String?,
+      address: salon['address'] as String?,
+      addressEn: salon['address_en'] as String?,
       rating: salon['rating_avg'] is num
           ? (salon['rating_avg'] as num).toDouble()
           : 0,

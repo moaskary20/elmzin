@@ -57,8 +57,11 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
   final _phone = TextEditingController();
   final _about = TextEditingController();
   final _city = TextEditingController();
+  final _cityEn = TextEditingController();
   final _district = TextEditingController();
+  final _districtEn = TextEditingController();
   final _address = TextEditingController();
+  final _addressEn = TextEditingController();
   SalonProfile? _salon;
   List<OwnHour> _hours = const [];
   double? _lat;
@@ -92,8 +95,11 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
       _phone,
       _about,
       _city,
+      _cityEn,
       _district,
+      _districtEn,
       _address,
+      _addressEn,
     ]) {
       controller.dispose();
     }
@@ -133,8 +139,11 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
         _phone.text = salon.phone ?? '';
         _about.text = salon.about ?? '';
         _city.text = salon.city ?? '';
+        _cityEn.text = salon.cityEn ?? '';
         _district.text = salon.district ?? '';
+        _districtEn.text = salon.districtEn ?? '';
         _address.text = salon.address ?? '';
+        _addressEn.text = salon.addressEn ?? '';
         _lat = salon.latitude;
         _lng = salon.longitude;
         _homeService = salon.homeService;
@@ -198,8 +207,13 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
         'phone': _phone.text.trim(),
         'about': _about.text.trim(),
         'city': _city.text.trim(),
+        'city_en': _cityEn.text.trim().isEmpty ? null : _cityEn.text.trim(),
         'district': _district.text.trim(),
+        'district_en':
+            _districtEn.text.trim().isEmpty ? null : _districtEn.text.trim(),
         'address': _address.text.trim(),
+        'address_en':
+            _addressEn.text.trim().isEmpty ? null : _addressEn.text.trim(),
         'latitude': _lat,
         'longitude': _lng,
         'offers_home_service': _homeService,
@@ -559,12 +573,35 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
         ),
         const SizedBox(height: 6),
         _section(_t('العنوان والموقع', 'Address and location')),
-        _field(const Key('manage-city'), _city, _t('المدينة', 'City')),
-        _field(const Key('manage-district'), _district, _t('الحي', 'District')),
+        _field(
+          const Key('manage-city'),
+          _city,
+          _t('المدينة (عربي)', 'City (Arabic)'),
+        ),
+        _field(
+          const Key('manage-city-en'),
+          _cityEn,
+          _t('المدينة (English)', 'City (English)'),
+        ),
+        _field(
+          const Key('manage-district'),
+          _district,
+          _t('الحي (عربي)', 'District (Arabic)'),
+        ),
+        _field(
+          const Key('manage-district-en'),
+          _districtEn,
+          _t('الحي (English)', 'District (English)'),
+        ),
         _field(
           const Key('manage-address'),
           _address,
-          _t('العنوان بالتفصيل', 'Address'),
+          _t('العنوان بالتفصيل (عربي)', 'Address (Arabic)'),
+        ),
+        _field(
+          const Key('manage-address-en'),
+          _addressEn,
+          _t('العنوان بالتفصيل (English)', 'Address (English)'),
         ),
         OutlinedButton.icon(
           key: const Key('manage-location'),

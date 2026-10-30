@@ -156,13 +156,23 @@ class SalonResource extends Resource
             Section::make('العنوان')
                 ->schema([
                     TextInput::make('city')
-                        ->label('المدينة')
+                        ->label('المدينة (عربي)')
                         ->required(),
+                    TextInput::make('city_en')
+                        ->label('المدينة (English)')
+                        ->placeholder('Cairo, Giza…'),
                     TextInput::make('district')
-                        ->label('الحي'),
+                        ->label('الحي (عربي)'),
+                    TextInput::make('district_en')
+                        ->label('الحي (English)')
+                        ->placeholder('Nasr City, Mohandessin…'),
                     TextInput::make('address')
-                        ->label('العنوان')
+                        ->label('العنوان (عربي)')
                         ->required()
+                        ->columnSpanFull(),
+                    TextInput::make('address_en')
+                        ->label('العنوان (English)')
+                        ->placeholder('Street, landmark, district, city, Egypt')
                         ->columnSpanFull(),
                     TextInput::make('latitude')
                         ->label('خط العرض')

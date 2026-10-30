@@ -154,8 +154,11 @@ class SalonProfile {
     this.about,
     this.aboutEn,
     this.city,
+    this.cityEn,
     this.district,
+    this.districtEn,
     this.address,
+    this.addressEn,
     this.latitude,
     this.longitude,
     this.homeService = false,
@@ -178,8 +181,11 @@ class SalonProfile {
   final String? about;
   final String? aboutEn;
   final String? city;
+  final String? cityEn;
   final String? district;
+  final String? districtEn;
   final String? address;
+  final String? addressEn;
   final double? latitude;
   final double? longitude;
   final bool homeService;
@@ -210,8 +216,11 @@ class SalonProfile {
       about: row['about'] as String?,
       aboutEn: row['about_en'] as String?,
       city: row['city'] as String?,
+      cityEn: row['city_en'] as String?,
       district: row['district'] as String?,
+      districtEn: row['district_en'] as String?,
       address: row['address'] as String?,
+      addressEn: row['address_en'] as String?,
       latitude: (row['latitude'] as num?)?.toDouble(),
       longitude: (row['longitude'] as num?)?.toDouble(),
       homeService: row['offers_home_service'] as bool? ?? false,

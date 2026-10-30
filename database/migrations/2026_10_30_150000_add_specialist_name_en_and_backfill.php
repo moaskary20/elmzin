@@ -56,6 +56,7 @@ return new class extends Migration
             'حلاق' => 'Barber',
             'حلاق أول' => 'Senior barber',
             'خبير لحية' => 'Beard specialist',
+            'أخصائي لحية' => 'Beard specialist',
             'أخصائية تجميل' => 'Beautician',
             'خبيرة تجميل' => 'Beautician',
             'مصففة أطفال' => 'Kids stylist',

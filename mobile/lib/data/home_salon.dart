@@ -17,6 +17,9 @@ class HomeSalon {
     required this.offersHomeService,
     this.nameEn,
     this.address,
+    this.addressEn,
+    this.cityEn,
+    this.districtEn,
     this.latitude,
     this.longitude,
     this.minPrice,
@@ -33,8 +36,11 @@ class HomeSalon {
   final String name;
   final String? nameEn;
   final String city;
+  final String? cityEn;
   final String district;
+  final String? districtEn;
   final String? address;
+  final String? addressEn;
   final double ratingAvg;
   final bool isFeatured;
   final bool offersHomeService;
@@ -54,8 +60,11 @@ class HomeSalon {
   String placeFor(bool english) => placeLineFor(
         english: english,
         address: address,
+        addressEn: addressEn,
         city: city,
+        cityEn: cityEn,
         district: district,
+        districtEn: districtEn,
       );
 
   List<String> servicesFor(bool english) =>
@@ -220,8 +229,11 @@ class SalonsApi {
             name: '${row['name'] ?? ''}',
             nameEn: row['name_en'] as String?,
             city: '${row['city'] ?? ''}',
+            cityEn: row['city_en'] as String?,
             district: '${row['district'] ?? ''}',
+            districtEn: row['district_en'] as String?,
             address: row['address'] as String?,
+            addressEn: row['address_en'] as String?,
             ratingAvg: row['rating_avg'] is num
                 ? (row['rating_avg'] as num).toDouble()
                 : 0,

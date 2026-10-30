@@ -126,7 +126,10 @@ class SalonDetail {
     this.nameEn,
     this.aboutEn,
     this.categoryEn,
+    this.cityEn,
+    this.districtEn,
     this.address,
+    this.addressEn,
     this.latitude,
     this.longitude,
     required this.category,
@@ -149,8 +152,11 @@ class SalonDetail {
   final String about;
   final String? aboutEn;
   final String city;
+  final String? cityEn;
   final String district;
+  final String? districtEn;
   final String? address;
+  final String? addressEn;
   final double? latitude;
   final double? longitude;
   final String category;
@@ -178,8 +184,11 @@ class SalonDetail {
   String placeFor(bool english) => placeLineFor(
         english: english,
         address: address,
+        addressEn: addressEn,
         city: city,
+        cityEn: cityEn,
         district: district,
+        districtEn: districtEn,
       );
 
   String get mapQuery {
@@ -338,8 +347,11 @@ class SalonDetailApi {
       about: '${row['about'] ?? ''}',
       aboutEn: row['about_en'] as String?,
       city: '${row['city'] ?? ''}',
+      cityEn: row['city_en'] as String?,
       district: '${row['district'] ?? ''}',
+      districtEn: row['district_en'] as String?,
       address: row['address'] as String?,
+      addressEn: row['address_en'] as String?,
       latitude: row['latitude'] is num
           ? (row['latitude'] as num).toDouble()
           : null,
