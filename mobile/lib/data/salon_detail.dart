@@ -347,11 +347,11 @@ class SalonDetailApi {
       about: '${row['about'] ?? ''}',
       aboutEn: row['about_en'] as String?,
       city: '${row['city'] ?? ''}',
-      cityEn: row['city_en'] as String?,
+      cityEn: localizedText(row['city_en']),
       district: '${row['district'] ?? ''}',
-      districtEn: row['district_en'] as String?,
-      address: row['address'] as String?,
-      addressEn: row['address_en'] as String?,
+      districtEn: localizedText(row['district_en']),
+      address: localizedText(row['address']),
+      addressEn: localizedText(row['address_en']),
       latitude: row['latitude'] is num
           ? (row['latitude'] as num).toDouble()
           : null,

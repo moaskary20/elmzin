@@ -6,6 +6,12 @@ String localized(String primary, String? english, bool isEnglish) {
   return value;
 }
 
+String? localizedText(Object? value) {
+  final text = value?.toString().trim();
+  if (text == null || text.isEmpty) return null;
+  return text;
+}
+
 const placeNamesEn = <String, String>{
   'مدينة نصر': 'Nasr City',
   'المهندسين': 'Mohandessin',
@@ -51,6 +57,8 @@ String translatePlaceText(String value) {
   return out;
 }
 
+/// Arabic locale → Arabic address/city/district only.
+/// English locale → English address first, then EN city/district, then translated fallback.
 String placeLineFor({
   required bool english,
   String? address,
@@ -60,31 +68,39 @@ String placeLineFor({
   String district = '',
   String? districtEn,
 }) {
-  if (english) {
-    final englishAddress = addressEn?.trim();
-    if (englishAddress != null && englishAddress.isNotEmpty) {
-      return englishAddress;
+  if (!english) {
+    final arabicAddress = address?.trim();
+    if (arabicAddress != null && arabicAddress.isNotEmpty) {
+      return arabicAddress;
     }
-    final line = address?.trim();
-    if (line != null && line.isNotEmpty) {
-      return translatePlaceText(line);
-    }
-    final area = placePartFor(
-      (districtEn ?? '').trim().isNotEmpty ? districtEn! : district,
-      true,
-    );
-    final town = placePartFor(
-      (cityEn ?? '').trim().isNotEmpty ? cityEn! : city,
-      true,
-    );
+    final area = district.trim();
+    final town = city.trim();
     if (area.isEmpty) return town;
     if (town.isEmpty) return area;
-    return '$area, $town';
+    return '$area، $town';
   }
 
-  final line = address?.trim();
-  if (line != null && line.isNotEmpty) return line;
-  if (district.isEmpty) return city;
-  if (city.isEmpty) return district;
-  return '$district، $city';
+  final englishAddress = addressEn?.trim();
+  if (englishAddress != null && englishAddress.isNotEmpty) {
+    return englishAddress;
+  }
+
+  final areaEn = (districtEn ?? '').trim();
+  final townEn = (cityEn ?? '').trim();
+  if (areaEn.isNotEmpty || townEn.isNotEmpty) {
+    if (areaEn.isEmpty) return townEn;
+    if (townEn.isEmpty) return areaEn;
+    return '$areaEn, $townEn';
+  }
+
+  final arabicAddress = address?.trim();
+  if (arabicAddress != null && arabicAddress.isNotEmpty) {
+    return translatePlaceText(arabicAddress);
+  }
+
+  final area = placePartFor(district, true);
+  final town = placePartFor(city, true);
+  if (area.isEmpty) return town;
+  if (town.isEmpty) return area;
+  return '$area, $town';
 }

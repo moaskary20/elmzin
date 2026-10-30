@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:muzayen/data/localized.dart';
 
 import 'account_store.dart';
 import 'home_slide.dart';
@@ -26,7 +27,15 @@ class CustomerBooking {
     required this.serviceName,
     required this.durationMinutes,
     required this.specialistName,
+    this.salonNameEn,
+    this.cityEn,
+    this.districtEn,
+    this.address,
+    this.addressEn,
+    this.serviceNameEn,
+    this.specialistNameEn,
     this.specialistTitle = '',
+    this.specialistTitleEn,
     this.imageUrl,
     this.notes,
   });
@@ -44,14 +53,22 @@ class CustomerBooking {
   final bool reviewed;
   final int salonId;
   final String salonName;
+  final String? salonNameEn;
   final String categorySlug;
   final String city;
+  final String? cityEn;
   final String district;
+  final String? districtEn;
+  final String? address;
+  final String? addressEn;
   final String? imageUrl;
   final String serviceName;
+  final String? serviceNameEn;
   final int durationMinutes;
   final String specialistName;
+  final String? specialistNameEn;
   final String specialistTitle;
+  final String? specialistTitleEn;
   final String? notes;
 
   DateTime? get at {
@@ -70,11 +87,29 @@ class CustomerBooking {
         moment.isAfter(DateTime.now());
   }
 
-  String get place {
-    if (district.isEmpty) return city;
-    if (city.isEmpty) return district;
-    return '$district، $city';
-  }
+  String get place => placeFor(false);
+
+  String placeFor(bool english) => placeLineFor(
+        english: english,
+        address: address,
+        addressEn: addressEn,
+        city: city,
+        cityEn: cityEn,
+        district: district,
+        districtEn: districtEn,
+      );
+
+  String salonNameFor(bool english) =>
+      localized(salonName, salonNameEn, english);
+
+  String serviceNameFor(bool english) =>
+      localized(serviceName, serviceNameEn, english);
+
+  String specialistNameFor(bool english) =>
+      localized(specialistName, specialistNameEn, english);
+
+  String specialistTitleFor(bool english) =>
+      localized(specialistTitle, specialistTitleEn, english);
 
   factory CustomerBooking.fromJson(Map<String, dynamic> row) {
     final salon = row['salon'] is Map
@@ -103,16 +138,24 @@ class CustomerBooking {
       reviewed: row['reviewed'] == true,
       salonId: salon['id'] is int ? salon['id'] as int : 0,
       salonName: '${salon['name'] ?? ''}',
+      salonNameEn: localizedText(salon['name_en']),
       categorySlug: '${salon['category_slug'] ?? ''}',
       city: '${salon['city'] ?? ''}',
+      cityEn: localizedText(salon['city_en']),
       district: '${salon['district'] ?? ''}',
+      districtEn: localizedText(salon['district_en']),
+      address: localizedText(salon['address']),
+      addressEn: localizedText(salon['address_en']),
       imageUrl: salon['image_url'] as String?,
       serviceName: '${service['name'] ?? ''}',
+      serviceNameEn: localizedText(service['name_en']),
       durationMinutes: service['duration_minutes'] is int
           ? service['duration_minutes'] as int
           : 0,
       specialistName: '${specialist['name'] ?? ''}',
+      specialistNameEn: localizedText(specialist['name_en']),
       specialistTitle: '${specialist['title'] ?? ''}',
+      specialistTitleEn: localizedText(specialist['title_en']),
       notes: row['notes'] as String?,
     );
   }

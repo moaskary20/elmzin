@@ -635,7 +635,7 @@ class _Hero extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        booking.salonName,
+                        booking.salonNameFor(english),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -646,7 +646,7 @@ class _Hero extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${booking.serviceName} · ${_when(booking, english)} · ${booking.time}',
+                        '${booking.serviceNameFor(english)} · ${_when(booking, english)} · ${booking.time}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -721,7 +721,7 @@ class _BookingCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            booking.salonName,
+                            booking.salonNameFor(english),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -732,7 +732,7 @@ class _BookingCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            booking.serviceName,
+                            booking.serviceNameFor(english),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -762,7 +762,7 @@ class _BookingCard extends StatelessWidget {
                       child: Text(
                         booking.specialistName.isEmpty
                             ? (english ? 'Any stylist' : 'أي متاح')
-                            : booking.specialistName,
+                            : booking.specialistNameFor(english),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -921,7 +921,7 @@ class _DetailSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  booking.salonName,
+                  booking.salonNameFor(english),
                   style: TextStyle(
                     color: AppColors.gold,
                     fontSize: 20,
@@ -932,15 +932,18 @@ class _DetailSheet extends StatelessWidget {
               _StatusBadge(status: booking.status, english: english),
             ],
           ),
-          if (booking.place.isNotEmpty) ...[
+          if (booking.placeFor(english).isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              booking.place,
+              booking.placeFor(english),
               style: TextStyle(color: AppColors.goldSoft, fontSize: 13),
             ),
           ],
           const SizedBox(height: 14),
-          _Line(english ? 'Service' : 'الخدمة', booking.serviceName),
+          _Line(
+            english ? 'Service' : 'الخدمة',
+            booking.serviceNameFor(english),
+          ),
           if (booking.durationMinutes > 0)
             _Line(
               english ? 'Duration' : 'المدة',
@@ -952,9 +955,9 @@ class _DetailSheet extends StatelessWidget {
             english ? 'Stylist' : 'الأخصائي',
             booking.specialistName.isEmpty
                 ? (english ? 'Any available' : 'أي متاح')
-                : booking.specialistTitle.isEmpty
-                ? booking.specialistName
-                : '${booking.specialistName} · ${booking.specialistTitle}',
+                : booking.specialistTitleFor(english).isEmpty
+                ? booking.specialistNameFor(english)
+                : '${booking.specialistNameFor(english)} · ${booking.specialistTitleFor(english)}',
           ),
           _Line(english ? 'Day' : 'اليوم', _when(booking, english)),
           _Line(english ? 'Time' : 'الوقت', booking.time),

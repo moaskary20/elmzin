@@ -229,11 +229,11 @@ class SalonsApi {
             name: '${row['name'] ?? ''}',
             nameEn: row['name_en'] as String?,
             city: '${row['city'] ?? ''}',
-            cityEn: row['city_en'] as String?,
+            cityEn: localizedText(row['city_en']),
             district: '${row['district'] ?? ''}',
-            districtEn: row['district_en'] as String?,
-            address: row['address'] as String?,
-            addressEn: row['address_en'] as String?,
+            districtEn: localizedText(row['district_en']),
+            address: localizedText(row['address']),
+            addressEn: localizedText(row['address_en']),
             ratingAvg: row['rating_avg'] is num
                 ? (row['rating_avg'] as num).toDouble()
                 : 0,
