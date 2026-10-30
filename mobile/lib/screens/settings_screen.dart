@@ -23,7 +23,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    AccountStore.instance.load().whenComplete(AccountStore.instance.refresh);
+    // Refresh profile only — do not reload prefs here or a language change
+    // from this screen can be overwritten by a stale SharedPreferences read.
+    if (AccountStore.instance.loggedIn) {
+      AccountStore.instance.refresh();
+    }
   }
 
   bool get _english => AccountStore.instance.isEnglish;
@@ -73,6 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   tone: tone,
                   key: const Key('language-ar'),
                   label: 'العربية',
+                  caption: 'Arabic',
                   selected: current == 'ar',
                   onTap: () => Navigator.pop(context, 'ar'),
                 ),
@@ -81,6 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   tone: tone,
                   key: const Key('language-en'),
                   label: 'English',
+                  caption: 'الإنجليزية',
                   selected: current == 'en',
                   onTap: () => Navigator.pop(context, 'en'),
                 ),
@@ -90,10 +96,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-    if (picked == null) return;
-    await AccountStore.instance.setLocale(picked);
+    if (picked == null || !mounted) return;
+    final next = AccountStore.normalizeLocale(picked);
+    if (next == current) return;
+    await AccountStore.instance.setLocale(next);
     if (!mounted) return;
-    widget.onLocale(Locale(picked));
+    widget.onLocale(Locale(next));
+    final tone = SettingsTone.of(AccountStore.instance.darkMode);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            next == 'en' ? 'Language set to English' : 'تم ضبط اللغة إلى العربية',
+          ),
+          backgroundColor: tone.panel,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   @override
@@ -380,21 +400,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required SettingsTone tone,
     required Key key,
     required String label,
+    required String caption,
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      key: key,
-      contentPadding: EdgeInsets.zero,
-      onTap: onTap,
-      title: Text(
-        label,
-        style: TextStyle(
-          color: tone.text,
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+    return Material(
+      color: selected ? tone.accent.withValues(alpha: 0.14) : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: ListTile(
+        key: key,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        onTap: onTap,
+        title: Text(
+          label,
+          style: TextStyle(
+            color: tone.text,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+          ),
         ),
+        subtitle: Text(
+          caption,
+          style: TextStyle(color: tone.muted, fontSize: 12.5),
+        ),
+        trailing: selected
+            ? Icon(Icons.check_rounded, color: tone.accent)
+            : null,
       ),
-      trailing: selected ? Icon(Icons.check_rounded, color: tone.accent) : null,
     );
   }
 }

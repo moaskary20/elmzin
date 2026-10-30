@@ -40,6 +40,7 @@ class _AppShellState extends State<AppShell> {
   var _cart = false;
   String? _cartHighlight;
   var _bookingsTick = 0;
+  late final Widget _settingsPage;
 
   bool get _women => _category?.slug == 'women' || _salonSlug == 'women';
 
@@ -55,6 +56,12 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     _locale = Locale(AccountStore.normalizeLocale(widget.locale.languageCode));
+    _settingsPage = SettingsScreen(
+      onLocale: (locale) {
+        if (!mounted) return;
+        setState(() => _locale = locale);
+      },
+    );
     AccountStore.instance.addListener(_onAccount);
     // Prefer the locale passed from LanguageScreen / splash; only hydrate
     // account fields without letting a stale prefs read wipe English.
@@ -219,9 +226,7 @@ class _AppShellState extends State<AppShell> {
       _belowHeader(SearchScreen(locale: _locale, onOpenSalon: _openSalon)),
       _belowHeader(ServicesScreen(locale: _locale, onOpenSalon: _openSalon)),
       _belowHeader(ShopScreen(locale: _locale)),
-      _belowHeader(
-        SettingsScreen(onLocale: (locale) => setState(() => _locale = locale)),
-      ),
+      _belowHeader(_settingsPage),
     ];
 
     return SystemBars(
