@@ -634,15 +634,11 @@ class _BookingDetails extends StatelessWidget {
                   text: booking.customerEmail!,
                 ),
               ],
-              if (booking.customerAddress != null ||
-                  booking.customerCity != null) ...[
+              if (booking.customerPlaceFor(english).isNotEmpty) ...[
                 const SizedBox(height: 6),
                 _IconLine(
                   icon: Icons.location_on_outlined,
-                  text: [
-                    booking.customerAddress,
-                    booking.customerCity,
-                  ].whereType<String>().join(english ? ', ' : '، '),
+                  text: booking.customerPlaceFor(english),
                 ),
               ],
             ],

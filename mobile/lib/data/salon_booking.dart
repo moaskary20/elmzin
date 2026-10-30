@@ -31,7 +31,9 @@ class SalonBooking {
     this.createdAt,
     this.customerEmail,
     this.customerCity,
+    this.customerCityEn,
     this.customerAddress,
+    this.customerAddressEn,
     this.customerAvatar,
     this.registered = false,
     this.visits = 0,
@@ -65,7 +67,9 @@ class SalonBooking {
   final DateTime? createdAt;
   final String? customerEmail;
   final String? customerCity;
+  final String? customerCityEn;
   final String? customerAddress;
+  final String? customerAddressEn;
   final String? customerAvatar;
   final bool registered;
   final int visits;
@@ -88,6 +92,14 @@ class SalonBooking {
         cancelLockMessage ?? '',
         cancelLockMessageEn,
         english,
+      );
+
+  String customerPlaceFor(bool english) => placeLineFor(
+        english: english,
+        address: customerAddress,
+        addressEn: customerAddressEn,
+        city: customerCity ?? '',
+        cityEn: customerCityEn,
       );
 
   DateTime? get at {
@@ -143,7 +155,9 @@ class SalonBooking {
       customerPhone: '${customer['phone'] ?? ''}',
       customerEmail: text(customer['email']),
       customerCity: text(customer['city']),
+      customerCityEn: text(customer['city_en']),
       customerAddress: text(customer['address']),
+      customerAddressEn: text(customer['address_en']),
       customerAvatar: text(customer['avatar_url']),
       registered: customer['registered'] == true,
       visits: whole(customer['visits']),

@@ -83,7 +83,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   Widget build(BuildContext context) {
     final tone = SettingsTone.of(AccountStore.instance.darkMode);
     final english = AccountStore.instance.isEnglish;
-    final label = _picked?.address;
+    final label = english
+        ? (_picked?.addressEn?.trim().isNotEmpty == true
+              ? _picked!.addressEn
+              : _picked?.address)
+        : _picked?.address;
     final title =
         widget.title ??
         (english ? 'Choose address' : 'تحديد العنوان');

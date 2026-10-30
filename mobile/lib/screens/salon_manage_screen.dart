@@ -254,8 +254,15 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
       _lat = place.latitude;
       _lng = place.longitude;
       if (_address.text.trim().isEmpty) _address.text = place.address;
+      if (_addressEn.text.trim().isEmpty &&
+          (place.addressEn ?? '').trim().isNotEmpty) {
+        _addressEn.text = place.addressEn!;
+      }
       if (_city.text.trim().isEmpty && (place.city ?? '').isNotEmpty) {
         _city.text = place.city!;
+      }
+      if (_cityEn.text.trim().isEmpty && (place.cityEn ?? '').isNotEmpty) {
+        _cityEn.text = place.cityEn!;
       }
     });
   }

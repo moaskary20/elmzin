@@ -76,7 +76,9 @@ class AuthApi {
     required String phone,
     required String password,
     required String address,
+    String? addressEn,
     required String? city,
+    String? cityEn,
     required double latitude,
     required double longitude,
     required bool notifications,
@@ -142,7 +144,9 @@ class AuthApi {
     required String phone,
     required String password,
     required String address,
+    String? addressEn,
     required String? city,
+    String? cityEn,
     required double latitude,
     required double longitude,
     required bool notifications,
@@ -180,7 +184,9 @@ class AuthApi {
       'phone': phone,
       'password': password,
       'address': address,
+      if (addressEn != null && addressEn.isNotEmpty) 'address_en': addressEn,
       'city': city,
+      if (cityEn != null && cityEn.isNotEmpty) 'city_en': cityEn,
       'latitude': latitude,
       'longitude': longitude,
       'notifications': notifications,
@@ -241,10 +247,14 @@ class MapAddress {
     required this.city,
     required this.latitude,
     required this.longitude,
+    this.addressEn,
+    this.cityEn,
   });
 
   final String address;
+  final String? addressEn;
   final String? city;
+  final String? cityEn;
   final double latitude;
   final double longitude;
 }
@@ -256,24 +266,42 @@ class MapGeocoder {
   static void useDefault() => resolve = _resolve;
 
   static Future<MapAddress> _resolve(double latitude, double longitude) async {
+    final arabic = _lookup(latitude, longitude, 'ar');
+    final english = _lookup(latitude, longitude, 'en');
+    final results = await Future.wait([arabic, english]);
+    final ar = results[0];
+    final en = results[1];
+    if (ar == null && en == null) {
+      throw AuthException('تعذر قراءة العنوان من الخريطة.');
+    }
+    return MapAddress(
+      address: ar?.$1 ?? en?.$1 ?? '',
+      addressEn: en?.$1,
+      city: ar?.$2 ?? en?.$2,
+      cityEn: en?.$2 ?? ar?.$2,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
+
+  static Future<(String address, String? city)?> _lookup(
+    double latitude,
+    double longitude,
+    String language,
+  ) async {
     final uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
       'latlng': '$latitude,$longitude',
-      'language': 'ar',
+      'language': language,
       'key': googleMapsApiKey,
     });
     final response = await http.get(uri).timeout(const Duration(seconds: 12));
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final results = body['results'] as List<dynamic>? ?? const [];
-    if (results.isEmpty) {
-      throw AuthException('تعذر قراءة العنوان من الخريطة.');
-    }
+    if (results.isEmpty) return null;
     final first = results.first as Map<String, dynamic>;
-    return MapAddress(
-      address: (first['formatted_address'] as String?) ?? '',
-      city: _city(first),
-      latitude: latitude,
-      longitude: longitude,
-    );
+    final address = (first['formatted_address'] as String?)?.trim() ?? '';
+    if (address.isEmpty) return null;
+    return (address, _city(first));
   }
 
   static String? _city(Map<String, dynamic> result) {
@@ -282,6 +310,13 @@ class MapGeocoder {
       if (part is! Map) continue;
       final types = part['types'];
       if (types is List && types.contains('locality')) {
+        return part['long_name'] as String?;
+      }
+    }
+    for (final part in parts) {
+      if (part is! Map) continue;
+      final types = part['types'];
+      if (types is List && types.contains('administrative_area_level_1')) {
         return part['long_name'] as String?;
       }
     }
