@@ -183,7 +183,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (product.categoryName.isNotEmpty)
+                          if (product.categoryNameFor(english).isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -195,7 +195,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 border: Border.all(color: AppColors.line),
                               ),
                               child: Text(
-                                product.categoryName,
+                                product.categoryNameFor(english),
                                 style: TextStyle(
                                   color: AppColors.gold,
                                   fontWeight: FontWeight.w700,

@@ -89,7 +89,8 @@ class ShopCategoryResource extends Resource
                     ->circular(),
                 TextColumn::make('name')
                     ->label('القسم')
-                    ->searchable()
+                    ->description(fn (ShopCategory $record): ?string => $record->name_en)
+                    ->searchable(['name', 'name_en'])
                     ->sortable(),
                 TextColumn::make('products_count')
                     ->counts('products')
