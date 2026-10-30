@@ -231,7 +231,7 @@ class _SalonBody extends StatelessWidget {
         ),
         SalonMediaSlider(
           media: detail.media,
-          fallbackName: detail.name,
+          fallbackName: detail.nameFor(english),
           fallbackUrl: detail.imageUrl,
           height: 210,
         ),
@@ -251,7 +251,7 @@ class _SalonBody extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                detail.name,
+                detail.nameFor(english),
                 textAlign: TextAlign.start,
                 style: TextStyle(
                   color: SalonTheme.of(context).accent,
@@ -294,10 +294,10 @@ class _SalonBody extends StatelessWidget {
               ),
           ],
         ),
-        if (detail.about.isNotEmpty) ...[
+        if (detail.aboutFor(english).isNotEmpty) ...[
           const SizedBox(height: 14),
           Text(
-            detail.about,
+            detail.aboutFor(english),
             textAlign: TextAlign.start,
             style: TextStyle(
               color: SalonTheme.of(context).soft,
@@ -339,7 +339,7 @@ class _SalonBody extends StatelessWidget {
               for (final specialist in specialists)
                 _SpecialistChip(
                   name: specialist.name,
-                  title: specialist.title,
+                  title: specialist.titleFor(english),
                   selected: specialist.id == specialistId,
                   onTap: () => onSpecialist(specialist.id),
                 ),
@@ -661,7 +661,7 @@ class _ServiceRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    service.name,
+                    service.nameFor(english),
                     style: TextStyle(
                       color: SalonTheme.of(context).accent,
                       fontSize: 16,

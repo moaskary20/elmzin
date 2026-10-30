@@ -51,10 +51,14 @@ class ServicesRelationManager extends RelationManager
                 ->visibleOn('create')
                 ->columnSpanFull(),
             TextInput::make('name')
-                ->label('الخدمة')
+                ->label('الخدمة (عربي)')
                 ->disabled()
                 ->dehydrated(false)
                 ->visibleOn('edit')
+                ->columnSpanFull(),
+            TextInput::make('name_en')
+                ->label('الخدمة (English)')
+                ->maxLength(255)
                 ->columnSpanFull(),
             TextInput::make('price')
                 ->label('السعر')
@@ -72,7 +76,11 @@ class ServicesRelationManager extends RelationManager
                 ->label('متاحة للحجز')
                 ->default(true),
             Textarea::make('description')
-                ->label('وصف مختصر')
+                ->label('وصف مختصر (عربي)')
+                ->rows(2)
+                ->columnSpanFull(),
+            Textarea::make('description_en')
+                ->label('وصف مختصر (English)')
                 ->rows(2)
                 ->columnSpanFull(),
         ]);
@@ -99,9 +107,14 @@ class ServicesRelationManager extends RelationManager
                 CreateAction::make()
                     ->label('إضافة خدمة')
                     ->mutateDataUsing(function (array $data): array {
-                        $data['name'] = CatalogService::query()
+                        $catalog = CatalogService::query()
                             ->whereKey($data['catalog_service_id'])
-                            ->value('name');
+                            ->first(['name', 'name_en', 'description', 'description_en']);
+
+                        $data['name'] = $catalog?->name;
+                        $data['name_en'] = $data['name_en'] ?? $catalog?->name_en;
+                        $data['description'] = $data['description'] ?? $catalog?->description;
+                        $data['description_en'] = $data['description_en'] ?? $catalog?->description_en;
 
                         return $data;
                     }),

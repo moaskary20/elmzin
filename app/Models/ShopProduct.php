@@ -11,7 +11,9 @@ class ShopProduct extends Model
     protected $fillable = [
         'shop_category_id',
         'name',
+        'name_en',
         'description',
+        'description_en',
         'price',
         'compare_at_price',
         'stock',

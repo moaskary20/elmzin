@@ -11,7 +11,9 @@ class CatalogService extends Model
     protected $fillable = [
         'category_id',
         'name',
+        'name_en',
         'description',
+        'description_en',
         'price',
         'duration_minutes',
         'sort_order',
@@ -31,8 +33,21 @@ class CatalogService extends Model
     protected static function booted(): void
     {
         static::updated(function (CatalogService $item): void {
+            $payload = [];
             if ($item->wasChanged('name')) {
-                $item->services()->update(['name' => $item->name]);
+                $payload['name'] = $item->name;
+            }
+            if ($item->wasChanged('name_en')) {
+                $payload['name_en'] = $item->name_en;
+            }
+            if ($item->wasChanged('description')) {
+                $payload['description'] = $item->description;
+            }
+            if ($item->wasChanged('description_en')) {
+                $payload['description_en'] = $item->description_en;
+            }
+            if ($payload !== []) {
+                $item->services()->update($payload);
             }
         });
     }

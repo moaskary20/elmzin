@@ -66,7 +66,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
       }
       if (_homeOnly && !offer.homeService) return false;
       if (text.isNotEmpty &&
-          !'${offer.name} ${offer.description} ${offer.salonName}'.contains(
+          !'${offer.name} ${offer.nameEn ?? ''} ${offer.description} ${offer.salonName} ${offer.salonNameEn ?? ''}'
+              .contains(
             text,
           )) {
         return false;
@@ -517,10 +518,10 @@ class _PopularCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ServiceIcon(name: group.name, size: 40),
+              _ServiceIcon(name: group.nameFor(english), size: 40),
               const Spacer(),
               Text(
-                group.name,
+                group.nameFor(english),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -575,14 +576,14 @@ class _ServiceTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _ServiceIcon(name: group.name, size: 52),
+              _ServiceIcon(name: group.nameFor(english), size: 52),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      group.name,
+                      group.nameFor(english),
                       style: TextStyle(
                         color: AppColors.gold,
                         fontSize: 16,
@@ -692,14 +693,14 @@ class _OffersSheet extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
               child: Row(
                 children: [
-                  _ServiceIcon(name: group.name, size: 46),
+                  _ServiceIcon(name: group.nameFor(english), size: 46),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          group.name,
+                          group.nameFor(english),
                           style: TextStyle(
                             color: AppColors.gold,
                             fontSize: 20,
@@ -818,7 +819,7 @@ class _OfferRow extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            offer.salonName,
+                            offer.salonNameFor(english),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

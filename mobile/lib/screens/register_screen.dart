@@ -936,8 +936,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final salon = _type == 'salon';
     final step = _current;
 
+    final english = AccountStore.instance.isEnglish;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: english ? TextDirection.ltr : TextDirection.rtl,
       child: PopScope(
         canPop: step == null,
         onPopInvokedWithResult: (didPop, _) {

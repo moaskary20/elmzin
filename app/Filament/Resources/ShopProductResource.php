@@ -58,11 +58,18 @@ class ShopProductResource extends Resource
                         ->preload()
                         ->native(false),
                     TextInput::make('name')
-                        ->label('اسم المنتج')
+                        ->label('اسم المنتج (عربي)')
                         ->required()
                         ->maxLength(255),
+                    TextInput::make('name_en')
+                        ->label('اسم المنتج (English)')
+                        ->maxLength(255),
                     Textarea::make('description')
-                        ->label('الوصف')
+                        ->label('الوصف (عربي)')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                    Textarea::make('description_en')
+                        ->label('الوصف (English)')
                         ->rows(4)
                         ->columnSpanFull(),
                     TextInput::make('price')

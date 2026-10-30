@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 
 import 'home_slide.dart';
+import 'localized.dart';
 
 class HomeSalon {
   const HomeSalon({
@@ -14,6 +15,7 @@ class HomeSalon {
     required this.ratingAvg,
     required this.isFeatured,
     required this.offersHomeService,
+    this.nameEn,
     this.address,
     this.latitude,
     this.longitude,
@@ -28,6 +30,7 @@ class HomeSalon {
 
   final int id;
   final String name;
+  final String? nameEn;
   final String city;
   final String district;
   final String? address;
@@ -43,6 +46,8 @@ class HomeSalon {
   final bool verified;
   final int reviewsCount;
   final List<String> services;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
 
   bool belongsToCategory(String slug) {
     if (categorySlugs.contains(slug)) return true;
@@ -205,6 +210,7 @@ class SalonsApi {
           (row) => HomeSalon(
             id: row['id'] is int ? row['id'] as int : 0,
             name: '${row['name'] ?? ''}',
+            nameEn: row['name_en'] as String?,
             city: '${row['city'] ?? ''}',
             district: '${row['district'] ?? ''}',
             address: row['address'] as String?,

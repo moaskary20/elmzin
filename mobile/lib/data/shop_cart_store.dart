@@ -121,15 +121,16 @@ class ShopCartStore extends ChangeNotifier {
       final next = (current.quantity + qty).clamp(1, product.stock);
       _items[index] = current.copyWith(quantity: next, stock: product.stock);
     } else {
+      final english = AccountStore.instance.isEnglish;
       _items.add(
         ShopCartItem(
           productId: product.id,
-          name: product.name,
+          name: product.nameFor(english),
           price: product.price,
           quantity: qty,
           stock: product.stock,
           imageUrl: product.imageUrl,
-          categoryName: product.categoryName,
+          categoryName: product.categoryNameFor(english),
         ),
       );
     }

@@ -34,8 +34,10 @@ class SalonProfileController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name_en' => ['sometimes', 'nullable', 'string', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
             'about' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'about_en' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'city' => ['sometimes', 'required', 'string', 'max:120'],
             'district' => ['sometimes', 'nullable', 'string', 'max:120'],
             'address' => ['sometimes', 'required', 'string', 'max:255'],
@@ -88,9 +90,11 @@ class SalonProfileController extends Controller
         $salon->services()->create([
             'catalog_service_id' => $catalog->id,
             'name' => $catalog->name,
+            'name_en' => $catalog->name_en,
             'price' => $data['price'],
             'duration_minutes' => $data['duration_minutes'] ?? $catalog->duration_minutes ?? 30,
-            'description' => $data['description'] ?? null,
+            'description' => $data['description'] ?? $catalog->description,
+            'description_en' => $data['description_en'] ?? $catalog->description_en,
             'is_active' => true,
         ]);
 
@@ -105,7 +109,9 @@ class SalonProfileController extends Controller
         $data = $request->validate([
             'price' => ['sometimes', 'required', 'numeric', 'min:1', 'max:100000'],
             'duration_minutes' => ['sometimes', 'required', 'integer', 'min:5', 'max:600'],
+            'name_en' => ['sometimes', 'nullable', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'description_en' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
             'specialist_ids' => ['sometimes', 'array'],
             'specialist_ids.*' => ['integer', Rule::exists('specialists', 'id')->where('salon_id', $salon->id)],
@@ -228,7 +234,10 @@ class SalonProfileController extends Controller
         return $request->validate([
             'name' => [$required, 'string', 'max:120'],
             'title' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'title_en' => ['sometimes', 'nullable', 'string', 'max:120'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
+            'bio' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'bio_en' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
             'name.required' => 'اكتب اسم الأخصائي.',
@@ -258,8 +267,10 @@ class SalonProfileController extends Controller
             'data' => [
                 'id' => $salon->id,
                 'name' => $salon->name,
+                'name_en' => $salon->name_en,
                 'phone' => $salon->phone,
                 'about' => $salon->about,
+                'about_en' => $salon->about_en,
                 'city' => $salon->city,
                 'district' => $salon->district,
                 'address' => $salon->address,
@@ -269,15 +280,18 @@ class SalonProfileController extends Controller
                 'verification_status' => $salon->verification_status?->value,
                 'verification_label' => $salon->verification_status?->getLabel(),
                 'category' => $salon->category?->name,
+                'category_en' => $salon->category?->name_en,
                 'image_url' => $salon->image && Storage::disk('public')->exists($salon->image)
                     ? $request->getSchemeAndHttpHost().'/api/salons/'.$salon->id.'/image?v='.$salon->updated_at?->timestamp
                     : null,
                 'services' => $salon->services->sortBy('name')->values()->map(fn (Service $service): array => [
                     'id' => $service->id,
                     'name' => $service->name,
+                    'name_en' => $service->name_en,
                     'price' => (float) $service->price,
                     'duration_minutes' => (int) $service->duration_minutes,
                     'description' => $service->description,
+                    'description_en' => $service->description_en,
                     'is_active' => (bool) $service->is_active,
                     'specialist_ids' => $service->specialists->pluck('id')->values(),
                 ]),
@@ -285,6 +299,7 @@ class SalonProfileController extends Controller
                     'id' => $specialist->id,
                     'name' => $specialist->name,
                     'title' => $specialist->title,
+                    'title_en' => $specialist->title_en,
                     'phone' => $specialist->phone,
                     'is_active' => (bool) $specialist->is_active,
                 ]),
@@ -307,10 +322,11 @@ class SalonProfileController extends Controller
                 ->whereNotIn('id', $taken)
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->get(['id', 'name', 'duration_minutes', 'category_id'])
+                ->get(['id', 'name', 'name_en', 'duration_minutes', 'category_id'])
                 ->map(fn (CatalogService $item): array => [
                     'id' => $item->id,
                     'name' => $item->name,
+                    'name_en' => $item->name_en,
                     'duration_minutes' => $item->duration_minutes,
                     'category_id' => $item->category_id,
                 ]),

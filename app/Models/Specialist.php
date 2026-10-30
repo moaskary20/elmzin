@@ -13,8 +13,10 @@ class Specialist extends Model
         'salon_id',
         'name',
         'title',
+        'title_en',
         'phone',
         'bio',
+        'bio_en',
         'is_active',
     ];
 

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'account_store.dart';
 import 'home_slide.dart';
+import 'localized.dart';
 
 class SalonMediaItem {
   const SalonMediaItem({
@@ -49,13 +50,17 @@ class SalonServiceItem {
     required this.price,
     required this.durationMinutes,
     required this.specialistIds,
+    this.nameEn,
   });
 
   final int id;
   final String name;
+  final String? nameEn;
   final double price;
   final int durationMinutes;
   final List<int> specialistIds;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
 }
 
 class SalonSpecialistItem {
@@ -63,11 +68,15 @@ class SalonSpecialistItem {
     required this.id,
     required this.name,
     required this.title,
+    this.titleEn,
   });
 
   final int id;
   final String name;
   final String title;
+  final String? titleEn;
+
+  String titleFor(bool english) => localized(title, titleEn, english);
 }
 
 class SalonReviewItem {
@@ -103,6 +112,9 @@ class SalonDetail {
     required this.about,
     required this.city,
     required this.district,
+    this.nameEn,
+    this.aboutEn,
+    this.categoryEn,
     this.address,
     this.latitude,
     this.longitude,
@@ -122,13 +134,16 @@ class SalonDetail {
 
   final int id;
   final String name;
+  final String? nameEn;
   final String about;
+  final String? aboutEn;
   final String city;
   final String district;
   final String? address;
   final double? latitude;
   final double? longitude;
   final String category;
+  final String? categoryEn;
   final String categorySlug;
   final double ratingAvg;
   final int reviewsCount;
@@ -140,6 +155,12 @@ class SalonDetail {
   final List<SalonSpecialistItem> specialists;
   final List<SalonReviewItem> reviews;
   final List<BookedSlot> booked;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
+
+  String aboutFor(bool english) => localized(about, aboutEn, english);
+
+  String categoryFor(bool english) => localized(category, categoryEn, english);
 
   String get place {
     final line = address?.trim();
@@ -299,7 +320,9 @@ class SalonDetailApi {
     return SalonDetail(
       id: row['id'] is int ? row['id'] as int : 0,
       name: '${row['name'] ?? ''}',
+      nameEn: row['name_en'] as String?,
       about: '${row['about'] ?? ''}',
+      aboutEn: row['about_en'] as String?,
       city: '${row['city'] ?? ''}',
       district: '${row['district'] ?? ''}',
       address: row['address'] as String?,
@@ -310,6 +333,7 @@ class SalonDetailApi {
           ? (row['longitude'] as num).toDouble()
           : null,
       category: '${row['category'] ?? ''}',
+      categoryEn: row['category_en'] as String?,
       categorySlug: '${row['category_slug'] ?? ''}',
       ratingAvg: row['rating_avg'] is num
           ? (row['rating_avg'] as num).toDouble()
@@ -347,6 +371,7 @@ class SalonDetailApi {
             (service) => SalonServiceItem(
               id: service['id'] is int ? service['id'] as int : 0,
               name: '${service['name'] ?? ''}',
+              nameEn: service['name_en'] as String?,
               price: service['price'] is num
                   ? (service['price'] as num).toDouble()
                   : 0,
@@ -367,6 +392,7 @@ class SalonDetailApi {
               id: specialist['id'] is int ? specialist['id'] as int : 0,
               name: '${specialist['name'] ?? ''}',
               title: '${specialist['title'] ?? ''}',
+              titleEn: specialist['title_en'] as String?,
             ),
           )
           .toList(),

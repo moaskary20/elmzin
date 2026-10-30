@@ -15,10 +15,12 @@ class LanguageScreen extends StatefulWidget {
 class _LanguageScreenState extends State<LanguageScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _entrance;
+  late String _selected;
 
   @override
   void initState() {
     super.initState();
+    _selected = AccountStore.normalizeLocale(AccountStore.instance.locale);
     _entrance = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -31,9 +33,11 @@ class _LanguageScreenState extends State<LanguageScreen>
     super.dispose();
   }
 
-  void _selectArabic() {
-    const locale = Locale('ar');
-    AccountStore.instance.setLocale(locale.languageCode);
+  void _select(String code) {
+    final localeCode = AccountStore.normalizeLocale(code);
+    setState(() => _selected = localeCode);
+    AccountStore.instance.setLocale(localeCode);
+    final locale = Locale(localeCode);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 600),
@@ -103,22 +107,50 @@ class _LanguageScreenState extends State<LanguageScreen>
                                     height: 1.2,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 4),
                                 Text(
-                                  'لغة التطبيق العربية',
+                                  'App language',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: AppColors.goldSoft,
-                                    fontSize: 15,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'اختر العربية أو الإنجليزية',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.goldSoft,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  'Choose Arabic or English',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.goldSoft.withValues(
+                                      alpha: 0.85,
+                                    ),
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 const SizedBox(height: 36),
                                 _LanguageChoice(
                                   label: 'العربية',
-                                  caption: 'اللغة المعتمدة',
-                                  selected: true,
-                                  onTap: _selectArabic,
+                                  caption: 'Arabic',
+                                  selected: _selected == 'ar',
+                                  onTap: () => _select('ar'),
+                                ),
+                                const SizedBox(height: 12),
+                                _LanguageChoice(
+                                  label: 'English',
+                                  caption: 'الإنجليزية',
+                                  selected: _selected == 'en',
+                                  onTap: () => _select('en'),
                                 ),
                                 const Spacer(flex: 4),
                               ],

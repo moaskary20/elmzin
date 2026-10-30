@@ -42,8 +42,11 @@ class ShopCategoryResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('اسم القسم')
+                ->label('اسم القسم (عربي)')
                 ->required()
+                ->maxLength(255),
+            TextInput::make('name_en')
+                ->label('اسم القسم (English)')
                 ->maxLength(255),
             TextInput::make('slug')
                 ->label('المعرّف')
@@ -52,7 +55,11 @@ class ShopCategoryResource extends Resource
                 ->maxLength(255)
                 ->helperText('مثال: hair-care'),
             Textarea::make('description')
-                ->label('الوصف')
+                ->label('الوصف (عربي)')
+                ->rows(3)
+                ->columnSpanFull(),
+            Textarea::make('description_en')
+                ->label('الوصف (English)')
                 ->rows(3)
                 ->columnSpanFull(),
             FileUpload::make('image')

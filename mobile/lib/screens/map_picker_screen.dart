@@ -11,13 +11,13 @@ import 'package:muzayen/theme/system_bars.dart';
 class MapPickerScreen extends StatefulWidget {
   const MapPickerScreen({
     super.key,
-    this.title = 'تحديد العنوان',
-    this.confirmLabel = 'استخدام هذا العنوان',
+    this.title,
+    this.confirmLabel,
     this.initial,
   });
 
-  final String title;
-  final String confirmLabel;
+  final String? title;
+  final String? confirmLabel;
   final LatLng? initial;
 
   @override
@@ -52,7 +52,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       setState(() => _error = error.message);
     } catch (_) {
       if (!mounted || request != _request) return;
-      setState(() => _error = 'تعذر قراءة العنوان من الخريطة.');
+      setState(
+        () => _error = AccountStore.instance.isEnglish
+            ? 'Could not read the address from the map.'
+            : 'تعذر قراءة العنوان من الخريطة.',
+      );
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
     }
@@ -78,10 +82,17 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   @override
   Widget build(BuildContext context) {
     final tone = SettingsTone.of(AccountStore.instance.darkMode);
+    final english = AccountStore.instance.isEnglish;
     final label = _picked?.address;
+    final title =
+        widget.title ??
+        (english ? 'Choose address' : 'تحديد العنوان');
+    final confirm =
+        widget.confirmLabel ??
+        (english ? 'Use this address' : 'استخدام هذا العنوان');
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: english ? TextDirection.ltr : TextDirection.rtl,
       child: Scaffold(
         backgroundColor: tone.background,
         appBar: AppBar(
@@ -94,7 +105,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             statusColor: tone.background,
             navigationColor: tone.background,
           ),
-          title: Text(widget.title),
+          title: Text(title),
         ),
         body: Stack(
           children: [
@@ -148,7 +159,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        label ?? (_error ?? 'حرّك الخريطة لاختيار العنوان.'),
+                        label ??
+                            (_error ??
+                                (english
+                                    ? 'Move the map to choose an address.'
+                                    : 'حرّك الخريطة لاختيار العنوان.')),
                         key: const Key('map-address'),
                         style: TextStyle(
                           color: _error != null && label == null
@@ -173,8 +188,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                         ),
                         child: Text(
                           _loading
-                              ? 'جارٍ قراءة العنوان…'
-                              : widget.confirmLabel,
+                              ? (english
+                                    ? 'Reading address…'
+                                    : 'جارٍ قراءة العنوان…')
+                              : confirm,
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),

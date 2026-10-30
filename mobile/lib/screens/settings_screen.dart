@@ -52,16 +52,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _language() async {
-    await showDialog<void>(
+    final english = _english;
+    final current = AccountStore.normalizeLocale(AccountStore.instance.locale);
+    final picked = await showDialog<String>(
       context: context,
       builder: (context) {
         final tone = SettingsTone.of(AccountStore.instance.darkMode);
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: english ? TextDirection.ltr : TextDirection.rtl,
           child: AlertDialog(
             backgroundColor: tone.panel,
             title: Text(
-              'لغة التطبيق',
+              english ? 'App language' : 'لغة التطبيق',
               style: TextStyle(color: tone.text, fontWeight: FontWeight.w700),
             ),
             content: Column(
@@ -71,8 +73,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   tone: tone,
                   key: const Key('language-ar'),
                   label: 'العربية',
-                  selected: true,
-                  onTap: () => Navigator.pop(context),
+                  selected: current == 'ar',
+                  onTap: () => Navigator.pop(context, 'ar'),
+                ),
+                const SizedBox(height: 8),
+                _languageTile(
+                  tone: tone,
+                  key: const Key('language-en'),
+                  label: 'English',
+                  selected: current == 'en',
+                  onTap: () => Navigator.pop(context, 'en'),
                 ),
               ],
             ),
@@ -80,8 +90,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-    AccountStore.instance.setLocale('ar');
-    widget.onLocale(const Locale('ar'));
+    if (picked == null) return;
+    AccountStore.instance.setLocale(picked);
+    widget.onLocale(Locale(picked));
   }
 
   @override
@@ -92,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final account = AccountStore.instance;
         final english = _english;
         final tone = SettingsTone.of(account.darkMode);
-        const language = 'العربية';
+        final language = account.locale == 'en' ? 'English' : 'العربية';
 
         return ColoredBox(
           key: const Key('settings-root'),

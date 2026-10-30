@@ -717,7 +717,7 @@ class _SalonCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            salon.name,
+                            salon.nameFor(english),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

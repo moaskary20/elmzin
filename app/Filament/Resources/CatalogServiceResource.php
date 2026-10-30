@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
@@ -48,7 +49,7 @@ class CatalogServiceResource extends Resource
                 ->native(false)
                 ->live(),
             TextInput::make('name')
-                ->label('اسم الخدمة')
+                ->label('اسم الخدمة (عربي)')
                 ->required()
                 ->maxLength(255)
                 ->unique(
@@ -56,6 +57,17 @@ class CatalogServiceResource extends Resource
                     modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where('category_id', $get('category_id')),
                 )
                 ->validationMessages(['unique' => 'هذه الخدمة موجودة بالفعل في هذا القسم.']),
+            TextInput::make('name_en')
+                ->label('اسم الخدمة (English)')
+                ->maxLength(255),
+            Textarea::make('description')
+                ->label('الوصف (عربي)')
+                ->rows(2)
+                ->columnSpanFull(),
+            Textarea::make('description_en')
+                ->label('الوصف (English)')
+                ->rows(2)
+                ->columnSpanFull(),
             Toggle::make('is_active')
                 ->label('متاحة للصالونات')
                 ->helperText('تظهر عند اشتراك الصالون وعند إضافة خدمة للصالون.')

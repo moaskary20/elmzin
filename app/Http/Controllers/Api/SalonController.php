@@ -41,11 +41,13 @@ class SalonController extends Controller
             ->map(fn (Salon $salon): array => [
                 'id' => $salon->id,
                 'name' => $salon->name,
+                'name_en' => $salon->name_en,
                 'image_url' => $this->imageUrl($request, $salon),
                 'city' => $salon->city,
                 'district' => $salon->district,
                 'address' => $salon->address,
                 'category' => $salon->category?->name,
+                'category_en' => $salon->category?->name_en,
                 'category_slug' => $salon->category?->slug,
                 'category_slugs' => $salon->categories->pluck('slug')
                     ->whenEmpty(fn () => collect([$salon->category?->slug])->filter())
@@ -80,13 +82,16 @@ class SalonController extends Controller
             ->map(fn (Service $service): array => [
                 'id' => $service->id,
                 'name' => $service->name,
+                'name_en' => $service->name_en,
                 'description' => $service->description,
+                'description_en' => $service->description_en,
                 'price' => (float) $service->price,
                 'duration_minutes' => $service->duration_minutes,
                 'bookings_count' => $service->bookings_count,
                 'salon' => [
                     'id' => $service->salon->id,
                     'name' => $service->salon->name,
+                    'name_en' => $service->salon->name_en,
                     'city' => $service->salon->city,
                     'district' => $service->salon->district,
                     'category_slug' => $service->salon->category?->slug,
@@ -126,15 +131,18 @@ class SalonController extends Controller
             'data' => [
                 'id' => $salon->id,
                 'name' => $salon->name,
+                'name_en' => $salon->name_en,
                 'image_url' => $this->imageUrl($request, $salon),
                 'media' => $this->mediaPayload($request, $salon),
                 'about' => $salon->about,
+                'about_en' => $salon->about_en,
                 'city' => $salon->city,
                 'district' => $salon->district,
                 'address' => $salon->address,
                 'latitude' => $salon->latitude !== null ? (float) $salon->latitude : null,
                 'longitude' => $salon->longitude !== null ? (float) $salon->longitude : null,
                 'category' => $salon->category?->name,
+                'category_en' => $salon->category?->name_en,
                 'category_slug' => $salon->category?->slug,
                 'category_slugs' => $salon->categories->pluck('slug')
                     ->whenEmpty(fn () => collect([$salon->category?->slug])->filter())
@@ -152,6 +160,7 @@ class SalonController extends Controller
                 'services' => $salon->services->map(fn (Service $service): array => [
                     'id' => $service->id,
                     'name' => $service->name,
+                    'name_en' => $service->name_en,
                     'price' => (float) $service->price,
                     'duration_minutes' => $service->duration_minutes,
                     'specialist_ids' => $service->specialists->pluck('id')->values(),
@@ -160,6 +169,7 @@ class SalonController extends Controller
                     'id' => $specialist->id,
                     'name' => $specialist->name,
                     'title' => $specialist->title,
+                    'title_en' => $specialist->title_en,
                 ])->values(),
                 'reviews' => $salon->reviews->map(fn ($review): array => [
                     'customer_name' => $review->customer_name,

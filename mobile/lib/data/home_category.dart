@@ -3,38 +3,51 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'home_slide.dart';
+import 'localized.dart';
 
 class HomeCategory {
   const HomeCategory({
     required this.name,
     required this.slug,
     required this.description,
+    this.nameEn,
+    this.descriptionEn,
     this.salonsCount = 0,
   });
 
   final String name;
+  final String? nameEn;
   final String slug;
   final String description;
+  final String? descriptionEn;
   final int salonsCount;
 
   String nameFor(String languageCode) {
-    if (languageCode != 'en') return name;
-    return switch (slug) {
-      'men' => 'Men',
-      'women' => 'Women',
-      'kids' => 'Kids',
-      _ => name,
-    };
+    final english = languageCode == 'en';
+    final fromApi = localized(name, nameEn, english);
+    if (english && fromApi == name) {
+      return switch (slug) {
+        'men' => 'Men',
+        'women' => 'Women',
+        'kids' => 'Kids',
+        _ => name,
+      };
+    }
+    return fromApi;
   }
 
   String descriptionFor(String languageCode) {
-    if (languageCode != 'en') return description;
-    return switch (slug) {
-      'men' => "Barbershops and men's grooming.",
-      'women' => "Beauty salons and women's care.",
-      'kids' => "Kids' salons and gentle haircuts.",
-      _ => description,
-    };
+    final english = languageCode == 'en';
+    final fromApi = localized(description, descriptionEn, english);
+    if (english && fromApi == description) {
+      return switch (slug) {
+        'men' => "Barbershops and men's grooming.",
+        'women' => "Beauty salons and women's care.",
+        'kids' => "Kids' salons and gentle haircuts.",
+        _ => description,
+      };
+    }
+    return fromApi;
   }
 
   static const fallback = [
@@ -73,8 +86,10 @@ class CategoriesApi {
           final category = item as Map<String, dynamic>;
           return HomeCategory(
             name: (category['name'] as String?) ?? '',
+            nameEn: category['name_en'] as String?,
             slug: (category['slug'] as String?) ?? '',
             description: (category['description'] as String?) ?? '',
+            descriptionEn: category['description_en'] as String?,
             salonsCount: (category['salons_count'] as num?)?.toInt() ?? 0,
           );
         })

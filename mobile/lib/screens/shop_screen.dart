@@ -209,7 +209,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   for (final category in _categories)
                     _CategoryChip(
                       key: Key('shop-category-${category.slug}'),
-                      label: category.name,
+                      label: category.nameFor(english),
                       selected: _categoryId == category.id,
                       imageUrl: category.imageUrl,
                       icon: _iconFor(category.slug),
@@ -478,7 +478,7 @@ class _ProductCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product.name,
+                      product.nameFor(english),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

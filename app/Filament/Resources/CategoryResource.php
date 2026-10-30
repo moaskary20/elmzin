@@ -47,8 +47,11 @@ class CategoryResource extends Resource
                 ->description('الأقسام الرئيسية التي يظهر تحتها الصالون: رجالي، حريمي، أو أطفال.')
                 ->schema([
                     TextInput::make('name')
-                        ->label('اسم القسم')
+                        ->label('اسم القسم (عربي)')
                         ->required()
+                        ->maxLength(255),
+                    TextInput::make('name_en')
+                        ->label('اسم القسم (English)')
                         ->maxLength(255),
                     TextInput::make('slug')
                         ->label('المعرّف')
@@ -57,7 +60,11 @@ class CategoryResource extends Resource
                         ->maxLength(255)
                         ->helperText('مثال: men أو women أو kids'),
                     Textarea::make('description')
-                        ->label('الوصف')
+                        ->label('الوصف (عربي)')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                    Textarea::make('description_en')
+                        ->label('الوصف (English)')
                         ->rows(3)
                         ->columnSpanFull(),
                     TextInput::make('sort_order')

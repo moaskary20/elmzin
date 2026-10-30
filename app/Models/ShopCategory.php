@@ -9,8 +9,10 @@ class ShopCategory extends Model
 {
     protected $fillable = [
         'name',
+        'name_en',
         'slug',
         'description',
+        'description_en',
         'image',
         'sort_order',
         'is_active',

@@ -31,8 +31,10 @@ class ShopController extends Controller
             ->map(fn (ShopCategory $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
+                'name_en' => $category->name_en,
                 'slug' => $category->slug,
                 'description' => $category->description,
+                'description_en' => $category->description_en,
                 'image_url' => $this->categoryImageUrl($request, $category),
                 'products' => $category->products->map(fn (ShopProduct $product): array => $this->productPayload($request, $product, $category))->values(),
             ]);
@@ -191,7 +193,9 @@ class ShopController extends Controller
         return [
             'id' => $product->id,
             'name' => $product->name,
+            'name_en' => $product->name_en,
             'description' => $product->description,
+            'description_en' => $product->description_en,
             'price' => (float) $product->price,
             'compare_at_price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : null,
             'stock' => (int) $product->stock,
@@ -199,6 +203,7 @@ class ShopController extends Controller
             'category' => [
                 'id' => $category?->id ?? $product->shop_category_id,
                 'name' => $category?->name ?? '',
+                'name_en' => $category?->name_en ?? '',
                 'slug' => $category?->slug ?? '',
             ],
         ];

@@ -135,7 +135,7 @@ class _SalonTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      salon.name,
+                      salon.nameFor(english),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

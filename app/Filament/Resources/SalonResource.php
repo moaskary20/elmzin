@@ -61,8 +61,11 @@ class SalonResource extends Resource
             Section::make('بيانات الصالون')
                 ->schema([
                     TextInput::make('name')
-                        ->label('اسم الصالون')
+                        ->label('اسم الصالون (عربي)')
                         ->required()
+                        ->maxLength(255),
+                    TextInput::make('name_en')
+                        ->label('اسم الصالون (English)')
                         ->maxLength(255),
                     Select::make('category_id')
                         ->label('القسم')
@@ -83,7 +86,11 @@ class SalonResource extends Resource
                         ->label('خدمة منزلية')
                         ->default(false),
                     Textarea::make('about')
-                        ->label('نبذة')
+                        ->label('نبذة (عربي)')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                    Textarea::make('about_en')
+                        ->label('نبذة (English)')
                         ->rows(3)
                         ->columnSpanFull(),
                     FileUpload::make('image')
@@ -201,7 +208,8 @@ class SalonResource extends Resource
                     ->circular(),
                 TextColumn::make('name')
                     ->label('الصالون')
-                    ->searchable()
+                    ->description(fn (Salon $record): ?string => $record->name_en)
+                    ->searchable(['name', 'name_en'])
                     ->sortable(),
                 TextColumn::make('category.name')
                     ->label('القسم')

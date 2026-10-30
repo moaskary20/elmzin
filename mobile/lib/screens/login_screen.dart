@@ -21,6 +21,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _hidden = true;
   String? _error;
 
+  bool get _english => AccountStore.instance.isEnglish;
+
+  String _t(String ar, String en) => _english ? en : ar;
+
   @override
   void initState() {
     super.initState();
@@ -41,7 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _password.text;
     if (!email.contains('@') || password.length < 6) {
       setState(() {
-        _error = 'أدخل بريداً صحيحاً وكلمة مرور من ٦ أحرف على الأقل.';
+        _error = _t(
+          'أدخل بريداً صحيحاً وكلمة مرور من ٦ أحرف على الأقل.',
+          'Enter a valid email and a password of at least 6 characters.',
+        );
       });
       return;
     }
@@ -60,7 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _error = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'تعذر الاتصال بالخادم.');
+      setState(
+        () => _error = _t('تعذر الاتصال بالخادم.', 'Could not reach the server.'),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -85,9 +94,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final tone = SettingsTone.of(AccountStore.instance.darkMode);
+    final english = _english;
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: english ? TextDirection.ltr : TextDirection.rtl,
       child: Scaffold(
         backgroundColor: tone.background,
         appBar: AppBar(
@@ -107,8 +117,11 @@ class _LoginScreenState extends State<LoginScreen> {
             BrandHero(
               tone: tone,
               logoKey: const Key('login-logo'),
-              title: 'مرحباً بعودتك',
-              subtitle: 'سجّل دخولك لتتابع حجوزاتك وصالوناتك المفضلة.',
+              title: _t('مرحباً بعودتك', 'Welcome back'),
+              subtitle: _t(
+                'سجّل دخولك لتتابع حجوزاتك وصالوناتك المفضلة.',
+                'Sign in to follow your bookings and favorite salons.',
+              ),
             ),
             const SizedBox(height: 26),
             TextField(
@@ -118,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
               textDirection: TextDirection.ltr,
               style: TextStyle(color: tone.text),
               cursorColor: tone.accent,
-              decoration: _field(tone, 'البريد'),
+              decoration: _field(tone, _t('البريد', 'Email')),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -127,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: _hidden,
               style: TextStyle(color: tone.text),
               cursorColor: tone.accent,
-              decoration: _field(tone, 'كلمة المرور').copyWith(
+              decoration: _field(tone, _t('كلمة المرور', 'Password')).copyWith(
                 suffixIcon: IconButton(
                   onPressed: () => setState(() => _hidden = !_hidden),
                   icon: Icon(
@@ -145,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: const Key('login-forgot'),
                 onPressed: _openForgot,
                 child: Text(
-                  'نسيت كلمة المرور؟',
+                  _t('نسيت كلمة المرور؟', 'Forgot password?'),
                   style: TextStyle(color: tone.accent, fontSize: 13),
                 ),
               ),
@@ -171,7 +184,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: Text(
-                _busy ? 'جارٍ الدخول…' : 'تسجيل الدخول',
+                _busy
+                    ? _t('جارٍ الدخول…', 'Signing in…')
+                    : _t('تسجيل الدخول', 'Sign in'),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -183,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
               key: const Key('login-register'),
               onPressed: _openRegister,
               child: Text(
-                'تسجيل الاشتراك',
+                _t('تسجيل الاشتراك', 'Create an account'),
                 style: TextStyle(
                   color: tone.accent,
                   fontWeight: FontWeight.w700,

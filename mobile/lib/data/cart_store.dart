@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'account_store.dart';
 import 'notifications_store.dart';
 import 'salon_detail.dart';
 
@@ -155,14 +156,15 @@ class CartStore extends ChangeNotifier {
     required String date,
     required String time,
   }) {
+    final english = AccountStore.instance.isEnglish;
     final item = CartItem(
       key: '${salon.id}-${service.id}-$date-$time-${specialist?.id ?? 0}',
       salonId: salon.id,
-      salonName: salon.name,
+      salonName: salon.nameFor(english),
       categorySlug: salon.categorySlug,
       salonImageUrl: salon.imageUrl,
       serviceId: service.id,
-      serviceName: service.name,
+      serviceName: service.nameFor(english),
       price: service.price,
       durationMinutes: service.durationMinutes,
       specialistId: specialist?.id,

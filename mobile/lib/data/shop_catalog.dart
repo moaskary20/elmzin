@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'home_slide.dart';
+import 'localized.dart';
 
 class ShopProduct {
   const ShopProduct({
@@ -13,21 +14,35 @@ class ShopProduct {
     required this.categoryId,
     required this.categoryName,
     required this.categorySlug,
+    this.nameEn,
     this.description = '',
+    this.descriptionEn,
+    this.categoryNameEn,
     this.compareAtPrice,
     this.imageUrl,
   });
 
   final int id;
   final String name;
+  final String? nameEn;
   final String description;
+  final String? descriptionEn;
   final double price;
   final double? compareAtPrice;
   final int stock;
   final int categoryId;
   final String categoryName;
+  final String? categoryNameEn;
   final String categorySlug;
   final String? imageUrl;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
+
+  String descriptionFor(bool english) =>
+      localized(description, descriptionEn, english);
+
+  String categoryNameFor(bool english) =>
+      localized(categoryName, categoryNameEn, english);
 
   bool get inStock => stock > 0;
 
@@ -41,7 +56,9 @@ class ShopProduct {
     return ShopProduct(
       id: row['id'] is num ? (row['id'] as num).toInt() : 0,
       name: '${row['name'] ?? ''}',
+      nameEn: row['name_en'] as String?,
       description: '${row['description'] ?? ''}',
+      descriptionEn: row['description_en'] as String?,
       price: row['price'] is num ? (row['price'] as num).toDouble() : 0,
       compareAtPrice: row['compare_at_price'] is num
           ? (row['compare_at_price'] as num).toDouble()
@@ -49,6 +66,7 @@ class ShopProduct {
       stock: row['stock'] is num ? (row['stock'] as num).toInt() : 0,
       categoryId: category['id'] is num ? (category['id'] as num).toInt() : 0,
       categoryName: '${category['name'] ?? ''}',
+      categoryNameEn: category['name_en'] as String?,
       categorySlug: '${category['slug'] ?? ''}',
       imageUrl: row['image_url'] as String?,
     );
@@ -105,17 +123,26 @@ class ShopCategory {
     required this.id,
     required this.name,
     required this.slug,
+    this.nameEn,
     this.description = '',
+    this.descriptionEn,
     this.imageUrl,
     this.products = const [],
   });
 
   final int id;
   final String name;
+  final String? nameEn;
   final String slug;
   final String description;
+  final String? descriptionEn;
   final String? imageUrl;
   final List<ShopProduct> products;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
+
+  String descriptionFor(bool english) =>
+      localized(description, descriptionEn, english);
 
   factory ShopCategory.fromJson(Map<String, dynamic> row) {
     final products = row['products'] is List
@@ -129,8 +156,10 @@ class ShopCategory {
     return ShopCategory(
       id: row['id'] is num ? (row['id'] as num).toInt() : 0,
       name: '${row['name'] ?? ''}',
+      nameEn: row['name_en'] as String?,
       slug: '${row['slug'] ?? ''}',
       description: '${row['description'] ?? ''}',
+      descriptionEn: row['description_en'] as String?,
       imageUrl: row['image_url'] as String?,
       products: products,
     );

@@ -205,7 +205,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                           const SizedBox(height: 14),
                           Text(
-                            product.name,
+                            product.nameFor(english),
                             style: TextStyle(
                               color: AppColors.gold,
                               fontSize: 26,
@@ -305,11 +305,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            product.description.isEmpty
+                            product.descriptionFor(english).isEmpty
                                 ? (english
                                       ? 'No description yet.'
                                       : 'لا يوجد وصف لهذا المنتج بعد.')
-                                : product.description,
+                                : product.descriptionFor(english),
                             style: TextStyle(
                               color: AppColors.goldSoft,
                               height: 1.7,

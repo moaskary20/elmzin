@@ -41,8 +41,12 @@ class SpecialistsRelationManager extends RelationManager
                 ->required()
                 ->maxLength(255),
             TextInput::make('title')
-                ->label('المسمّى')
+                ->label('المسمّى (عربي)')
                 ->placeholder('حلاق، أخصائية تجميل، مصففة أطفال')
+                ->maxLength(255),
+            TextInput::make('title_en')
+                ->label('المسمّى (English)')
+                ->placeholder('Barber, Beautician, Kids stylist')
                 ->maxLength(255),
             TextInput::make('phone')
                 ->label('الهاتف')
@@ -51,7 +55,11 @@ class SpecialistsRelationManager extends RelationManager
                 ->label('يظهر للاختيار')
                 ->default(true),
             Textarea::make('bio')
-                ->label('نبذة')
+                ->label('نبذة (عربي)')
+                ->rows(2)
+                ->columnSpanFull(),
+            Textarea::make('bio_en')
+                ->label('نبذة (English)')
                 ->rows(2)
                 ->columnSpanFull(),
             CheckboxList::make('services')

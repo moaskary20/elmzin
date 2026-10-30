@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'account_api.dart';
 import 'account_store.dart';
 import 'home_slide.dart';
+import 'localized.dart';
 
 class OwnService {
   const OwnService({
@@ -13,25 +14,33 @@ class OwnService {
     required this.price,
     required this.durationMinutes,
     required this.isActive,
+    this.nameEn,
     this.description,
+    this.descriptionEn,
     this.specialistIds = const [],
   });
 
   final int id;
   final String name;
+  final String? nameEn;
   final double price;
   final int durationMinutes;
   final bool isActive;
   final String? description;
+  final String? descriptionEn;
   final List<int> specialistIds;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
 
   factory OwnService.fromJson(Map<String, dynamic> row) => OwnService(
     id: (row['id'] as num).toInt(),
     name: row['name'] as String? ?? '',
+    nameEn: row['name_en'] as String?,
     price: (row['price'] as num?)?.toDouble() ?? 0,
     durationMinutes: (row['duration_minutes'] as num?)?.toInt() ?? 0,
     isActive: row['is_active'] as bool? ?? true,
     description: row['description'] as String?,
+    descriptionEn: row['description_en'] as String?,
     specialistIds: [
       for (final id in row['specialist_ids'] as List? ?? const [])
         (id as num).toInt(),
@@ -45,6 +54,7 @@ class OwnSpecialist {
     required this.name,
     required this.isActive,
     this.title,
+    this.titleEn,
     this.phone,
   });
 
@@ -52,13 +62,17 @@ class OwnSpecialist {
   final String name;
   final bool isActive;
   final String? title;
+  final String? titleEn;
   final String? phone;
+
+  String titleFor(bool english) => localized(title ?? '', titleEn, english);
 
   factory OwnSpecialist.fromJson(Map<String, dynamic> row) => OwnSpecialist(
     id: (row['id'] as num).toInt(),
     name: row['name'] as String? ?? '',
     isActive: row['is_active'] as bool? ?? true,
     title: row['title'] as String?,
+    titleEn: row['title_en'] as String?,
     phone: row['phone'] as String?,
   );
 }
@@ -107,16 +121,21 @@ class CatalogOption {
   const CatalogOption({
     required this.id,
     required this.name,
+    this.nameEn,
     this.durationMinutes,
   });
 
   final int id;
   final String name;
+  final String? nameEn;
   final int? durationMinutes;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
 
   factory CatalogOption.fromJson(Map<String, dynamic> row) => CatalogOption(
     id: (row['id'] as num).toInt(),
     name: row['name'] as String? ?? '',
+    nameEn: row['name_en'] as String?,
     durationMinutes: (row['duration_minutes'] as num?)?.toInt(),
   );
 }
@@ -125,8 +144,10 @@ class SalonProfile {
   const SalonProfile({
     required this.id,
     required this.name,
+    this.nameEn,
     this.phone,
     this.about,
+    this.aboutEn,
     this.city,
     this.district,
     this.address,
@@ -136,6 +157,7 @@ class SalonProfile {
     this.verificationStatus,
     this.verificationLabel,
     this.category,
+    this.categoryEn,
     this.imageUrl,
     this.services = const [],
     this.specialists = const [],
@@ -146,8 +168,10 @@ class SalonProfile {
 
   final int id;
   final String name;
+  final String? nameEn;
   final String? phone;
   final String? about;
+  final String? aboutEn;
   final String? city;
   final String? district;
   final String? address;
@@ -157,12 +181,15 @@ class SalonProfile {
   final String? verificationStatus;
   final String? verificationLabel;
   final String? category;
+  final String? categoryEn;
   final String? imageUrl;
   final List<OwnService> services;
   final List<OwnSpecialist> specialists;
   final List<OwnHour> hours;
   final List<CatalogOption> catalog;
   final OwnSubscription? subscription;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
 
   factory SalonProfile.fromJson(Map<String, dynamic> body) {
     final row = body['data'] as Map<String, dynamic>? ?? const {};
@@ -173,8 +200,10 @@ class SalonProfile {
     return SalonProfile(
       id: (row['id'] as num?)?.toInt() ?? 0,
       name: row['name'] as String? ?? '',
+      nameEn: row['name_en'] as String?,
       phone: row['phone'] as String?,
       about: row['about'] as String?,
+      aboutEn: row['about_en'] as String?,
       city: row['city'] as String?,
       district: row['district'] as String?,
       address: row['address'] as String?,
@@ -184,6 +213,7 @@ class SalonProfile {
       verificationStatus: row['verification_status'] as String?,
       verificationLabel: row['verification_label'] as String?,
       category: row['category'] as String?,
+      categoryEn: row['category_en'] as String?,
       imageUrl: row['image_url'] as String?,
       services: list(row['services'], OwnService.fromJson),
       specialists: list(row['specialists'], OwnSpecialist.fromJson),

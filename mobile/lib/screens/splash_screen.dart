@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/account_store.dart';
 import '../theme/system_bars.dart';
+import 'app_shell.dart';
 import 'language_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _load() async {
+    await AccountStore.instance.load();
     try {
       final data = await rootBundle.load('asset/logo.png');
       if (!mounted) return;
@@ -33,21 +36,25 @@ class _SplashScreenState extends State<SplashScreen> {
         _bytes = data.buffer.asUint8List();
         _ready = true;
       });
-      _timer = Timer(const Duration(milliseconds: 3200), _openLanguage);
+      _timer = Timer(const Duration(milliseconds: 3200), _openNext);
     } catch (_) {
       if (!mounted) return;
       setState(() => _ready = true);
-      _timer = Timer(const Duration(milliseconds: 1800), _openLanguage);
+      _timer = Timer(const Duration(milliseconds: 1800), _openNext);
     }
   }
 
-  void _openLanguage() {
+  void _openNext() {
     if (_left || !mounted) return;
     _left = true;
+    final store = AccountStore.instance;
+    final Widget next = store.localeChosen
+        ? AppShell(locale: Locale(AccountStore.normalizeLocale(store.locale)))
+        : const LanguageScreen();
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, _, _) => const LanguageScreen(),
+        pageBuilder: (_, _, _) => next,
         transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
         },

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 
 import 'home_slide.dart';
+import 'localized.dart';
 
 class ServiceOffer {
   const ServiceOffer({
@@ -14,7 +15,10 @@ class ServiceOffer {
     required this.salonId,
     required this.salonName,
     required this.categorySlug,
+    this.nameEn,
     this.description = '',
+    this.descriptionEn,
+    this.salonNameEn,
     this.bookings = 0,
     this.city = '',
     this.district = '',
@@ -26,12 +30,15 @@ class ServiceOffer {
 
   final int id;
   final String name;
+  final String? nameEn;
   final String description;
+  final String? descriptionEn;
   final double price;
   final int durationMinutes;
   final int bookings;
   final int salonId;
   final String salonName;
+  final String? salonNameEn;
   final String categorySlug;
   final String city;
   final String district;
@@ -42,6 +49,14 @@ class ServiceOffer {
 
   String get place => district.isEmpty ? city : '$district، $city';
 
+  String nameFor(bool english) => localized(name, nameEn, english);
+
+  String descriptionFor(bool english) =>
+      localized(description, descriptionEn, english);
+
+  String salonNameFor(bool english) =>
+      localized(salonName, salonNameEn, english);
+
   factory ServiceOffer.fromJson(Map<String, dynamic> row) {
     final salon = row['salon'] is Map
         ? Map<String, dynamic>.from(row['salon'] as Map)
@@ -49,7 +64,9 @@ class ServiceOffer {
     return ServiceOffer(
       id: row['id'] is int ? row['id'] as int : 0,
       name: '${row['name'] ?? ''}',
+      nameEn: row['name_en'] as String?,
       description: '${row['description'] ?? ''}',
+      descriptionEn: row['description_en'] as String?,
       price: row['price'] is num ? (row['price'] as num).toDouble() : 0,
       durationMinutes: row['duration_minutes'] is int
           ? row['duration_minutes'] as int
@@ -57,6 +74,7 @@ class ServiceOffer {
       bookings: row['bookings_count'] is int ? row['bookings_count'] as int : 0,
       salonId: salon['id'] is int ? salon['id'] as int : 0,
       salonName: '${salon['name'] ?? ''}',
+      salonNameEn: salon['name_en'] as String?,
       categorySlug: '${salon['category_slug'] ?? ''}',
       city: '${salon['city'] ?? ''}',
       district: '${salon['district'] ?? ''}',
@@ -158,6 +176,9 @@ class ServiceGroup {
 
   final String name;
   final List<ServiceOffer> offers;
+
+  String nameFor(bool english) =>
+      offers.isEmpty ? name : offers.first.nameFor(english);
 
   double get minPrice => offers.map((offer) => offer.price).reduce(math.min);
 

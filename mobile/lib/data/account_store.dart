@@ -17,6 +17,7 @@ class AccountStore extends ChangeNotifier {
   static const _photoKey = 'muzayen_account_photo';
   static const _photoUrlKey = 'muzayen_account_photo_url';
   static const _localeKey = 'muzayen_account_locale';
+  static const _localeChosenKey = 'muzayen_locale_chosen';
   static const _loggedInKey = 'muzayen_account_logged_in';
   static const _notificationsKey = 'muzayen_notifications';
   static const _darkModeKey = 'muzayen_dark_mode';
@@ -30,11 +31,16 @@ class AccountStore extends ChangeNotifier {
   String? photoPath;
   String? photoUrl;
   String locale = 'ar';
+  bool localeChosen = false;
   bool loggedIn = false;
   bool notifications = true;
   bool darkMode = true;
   double walletBalance = 0;
   int loyaltyPoints = 0;
+
+  bool get isEnglish => locale == 'en';
+
+  static String normalizeLocale(String? code) => code == 'en' ? 'en' : 'ar';
 
   String displayName(bool english) {
     final trimmed = name.trim();
@@ -53,8 +59,8 @@ class AccountStore extends ChangeNotifier {
       token = prefs.getString(_tokenKey);
       photoPath = prefs.getString(_photoKey);
       photoUrl = prefs.getString(_photoUrlKey);
-      locale = 'ar';
-      await prefs.setString(_localeKey, locale);
+      locale = normalizeLocale(prefs.getString(_localeKey));
+      localeChosen = prefs.getBool(_localeChosenKey) ?? false;
       loggedIn = prefs.getBool(_loggedInKey) ?? false;
       notifications = prefs.getBool(_notificationsKey) ?? true;
       darkMode = prefs.getBool(_darkModeKey) ?? true;
@@ -108,7 +114,11 @@ class AccountStore extends ChangeNotifier {
     if (session.token.isNotEmpty) token = session.token;
     notifications = session.notifications;
     darkMode = session.darkMode;
-    locale = 'ar';
+    if (localeChosen) {
+      locale = normalizeLocale(locale);
+    } else {
+      locale = normalizeLocale(session.locale);
+    }
     photoUrl = session.avatarUrl;
     walletBalance = session.walletBalance;
     loyaltyPoints = session.loyaltyPoints;
@@ -129,7 +139,9 @@ class AccountStore extends ChangeNotifier {
       role = session.role;
       notifications = session.notifications;
       darkMode = session.darkMode;
-      locale = 'ar';
+      if (!localeChosen) {
+        locale = normalizeLocale(session.locale);
+      }
       photoUrl = session.avatarUrl;
       walletBalance = session.walletBalance;
       loyaltyPoints = session.loyaltyPoints;
@@ -169,8 +181,9 @@ class AccountStore extends ChangeNotifier {
   }
 
   void setLocale(String code) {
-    if (code != 'ar') return;
-    locale = 'ar';
+    final next = normalizeLocale(code);
+    locale = next;
+    localeChosen = true;
     notifyListeners();
     _save();
     _pushSettings();
@@ -200,6 +213,7 @@ class AccountStore extends ChangeNotifier {
         await prefs.setString(_photoUrlKey, photoUrl!);
       }
       await prefs.setString(_localeKey, locale);
+      await prefs.setBool(_localeChosenKey, localeChosen);
       await prefs.setBool(_loggedInKey, loggedIn);
       await prefs.setBool(_notificationsKey, notifications);
       await prefs.setBool(_darkModeKey, darkMode);
@@ -219,6 +233,7 @@ class AccountStore extends ChangeNotifier {
     walletBalance = 0;
     loyaltyPoints = 0;
     locale = 'ar';
+    localeChosen = false;
     loggedIn = false;
     notifications = true;
     darkMode = true;
@@ -233,7 +248,7 @@ class AccountStore extends ChangeNotifier {
         token: current,
         notifications: notifications,
         darkMode: darkMode,
-        locale: 'ar',
+        locale: locale,
       ),
     );
   }

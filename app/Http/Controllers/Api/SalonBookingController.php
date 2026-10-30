@@ -231,11 +231,13 @@ class SalonBookingController extends Controller
             ],
             'service' => [
                 'name' => $booking->service?->name ?? '',
+                'name_en' => $booking->service?->name_en ?? '',
                 'duration_minutes' => (int) ($booking->service?->duration_minutes ?? 0),
             ],
             'specialist' => [
                 'name' => $booking->specialist?->name ?? '',
                 'title' => $booking->specialist?->title ?? '',
+                'title_en' => $booking->specialist?->title_en ?? '',
             ],
         ];
     }

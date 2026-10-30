@@ -19,8 +19,10 @@ class CategoryController extends Controller
             ->map(fn (Category $category) => [
                 'id' => $category->id,
                 'name' => $category->name,
+                'name_en' => $category->name_en,
                 'slug' => $category->slug,
                 'description' => $category->description,
+                'description_en' => $category->description_en,
                 'salons_count' => $category->salons_count,
             ]);
 
@@ -41,11 +43,14 @@ class CategoryController extends Controller
             ->map(fn (Category $category) => [
                 'id' => $category->id,
                 'name' => $category->name,
+                'name_en' => $category->name_en,
                 'slug' => $category->slug,
                 'services' => $category->catalogServices->map(fn (CatalogService $service) => [
                     'id' => $service->id,
                     'name' => $service->name,
+                    'name_en' => $service->name_en,
                     'description' => $service->description,
+                    'description_en' => $service->description_en,
                     'duration_minutes' => $service->duration_minutes,
                 ])->values(),
             ]);

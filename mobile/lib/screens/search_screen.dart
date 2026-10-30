@@ -216,7 +216,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
       if (text.isNotEmpty) {
         final haystack = [
-          salon.name,
+          salon.nameFor(_english),
           salon.city,
           salon.district,
           ...salon.services,
@@ -511,7 +511,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           BitmapDescriptor.hueOrange,
                         ),
                         infoWindow: InfoWindow(
-                          title: salon.name,
+                          title: salon.nameFor(_english),
                           snippet: _distanceLabel(
                             salon.distanceFrom(_lat, _lng),
                             _english,
@@ -1011,7 +1011,7 @@ class _ResultCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              salon.name,
+                              salon.nameFor(_english),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(

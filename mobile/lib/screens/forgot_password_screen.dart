@@ -6,7 +6,6 @@ import 'package:muzayen/data/auth_api.dart';
 import 'package:muzayen/theme/settings_tone.dart';
 import 'package:muzayen/theme/system_bars.dart';
 
-/// Always Arabic and RTL, like the other account screens.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key, this.email = ''});
 
@@ -18,6 +17,10 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   static const _resendSeconds = 60;
+
+  bool get _english => AccountStore.instance.isEnglish;
+
+  String _t(String ar, String en) => _english ? en : ar;
 
   late final TextEditingController _email;
   final _code = TextEditingController();
@@ -76,7 +79,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (!mounted) return;
       setState(() {
         _sent = true;
-        _notice = 'أرسلنا رمزاً من ٦ أرقام إلى $email إذا كان مسجلاً لدينا.';
+        _notice = _t(
+          'أرسلنا رمزاً من ٦ أرقام إلى $email إذا كان مسجلاً لدينا.',
+          'We sent a 6-digit code to $email if it is registered with us.',
+        );
       });
       _startCountdown();
     } on AuthException catch (error) {
@@ -97,11 +103,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
     if (password.length < 6) {
-      setState(() => _error = 'كلمة المرور يجب أن تكون ٦ أحرف على الأقل.');
+      setState(
+        () => _error = _t(
+          'كلمة المرور يجب أن تكون ٦ أحرف على الأقل.',
+          'Password must be at least 6 characters.',
+        ),
+      );
       return;
     }
     if (password != _confirm.text) {
-      setState(() => _error = 'تأكيد كلمة المرور غير مطابق.');
+      setState(
+        () => _error = _t(
+          'تأكيد كلمة المرور غير مطابق.',
+          'Password confirmation does not match.',
+        ),
+      );
       return;
     }
     setState(() {
@@ -117,7 +133,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (!mounted) return;
       AccountStore.instance.applySession(session);
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        const SnackBar(content: Text('تم تغيير كلمة المرور وتسجيل دخولك.')),
+        SnackBar(
+          content: Text(
+            _t(
+              'تم تغيير كلمة المرور وتسجيل دخولك.',
+              'Password updated. You are signed in.',
+            ),
+          ),
+        ),
       );
       Navigator.of(context).pop(true);
     } on AuthException catch (error) {
@@ -134,7 +157,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final tone = SettingsTone.of(AccountStore.instance.darkMode);
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: _english ? TextDirection.ltr : TextDirection.rtl,
       child: Scaffold(
         backgroundColor: tone.background,
         appBar: AppBar(
@@ -147,7 +170,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             statusColor: tone.background,
             navigationColor: tone.background,
           ),
-          title: const Text('نسيت كلمة المرور'),
+          title: Text(_t('نسيت كلمة المرور', 'Forgot password')),
         ),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
@@ -169,12 +192,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            _Steps(tone: tone, sent: _sent),
+            _Steps(tone: tone, sent: _sent, english: _english),
             const SizedBox(height: 18),
             Text(
               _sent
-                  ? 'أدخل الرمز الذي وصلك على البريد ثم اختر كلمة مرور جديدة.'
-                  : 'أدخل البريد المسجّل في حسابك وسنرسل لك رمزاً لاستعادة كلمة المرور.',
+                  ? _t(
+                      'أدخل الرمز الذي وصلك على البريد ثم اختر كلمة مرور جديدة.',
+                      'Enter the code from your email, then choose a new password.',
+                    )
+                  : _t(
+                      'أدخل البريد المسجّل في حسابك وسنرسل لك رمزاً لاستعادة كلمة المرور.',
+                      'Enter your registered email and we will send a recovery code.',
+                    ),
               style: TextStyle(color: tone.muted, fontSize: 14, height: 1.6),
             ),
             const SizedBox(height: 20),
@@ -186,7 +215,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               textDirection: TextDirection.ltr,
               style: TextStyle(color: tone.text),
               cursorColor: tone.accent,
-              decoration: _field(tone, 'البريد الإلكتروني', Icons.mail_outline),
+              decoration: _field(
+                tone,
+                _t('البريد الإلكتروني', 'Email'),
+                Icons.mail_outline,
+              ),
             ),
             if (_sent) ...[
               const SizedBox(height: 14),
@@ -206,7 +239,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 cursorColor: tone.accent,
                 decoration: _field(
                   tone,
-                  'رمز الاستعادة',
+                  _t('رمز الاستعادة', 'Recovery code'),
                   Icons.pin_outlined,
                 ).copyWith(counterText: ''),
               ),
@@ -220,7 +253,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 decoration:
                     _field(
                       tone,
-                      'كلمة المرور الجديدة',
+                      _t('كلمة المرور الجديدة', 'New password'),
                       Icons.lock_outline,
                     ).copyWith(
                       suffixIcon: IconButton(
@@ -243,7 +276,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 cursorColor: tone.accent,
                 decoration: _field(
                   tone,
-                  'تأكيد كلمة المرور',
+                  _t('تأكيد كلمة المرور', 'Confirm password'),
                   Icons.lock_outline,
                 ),
               ),
@@ -278,10 +311,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               child: Text(
                 _busy
-                    ? 'جارٍ الإرسال…'
+                    ? _t('جارٍ الإرسال…', 'Sending…')
                     : _sent
-                    ? 'تغيير كلمة المرور'
-                    : 'إرسال الرمز',
+                    ? _t('تغيير كلمة المرور', 'Update password')
+                    : _t('إرسال الرمز', 'Send code'),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -299,8 +332,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onPressed: _wait > 0 || _busy ? null : _send,
                     child: Text(
                       _wait > 0
-                          ? 'إعادة الإرسال بعد $_wait ث'
-                          : 'إعادة إرسال الرمز',
+                          ? _t(
+                              'إعادة الإرسال بعد $_wait ث',
+                              'Resend in $_wait s',
+                            )
+                          : _t('إعادة إرسال الرمز', 'Resend code'),
                       style: TextStyle(
                         color: _wait > 0 ? tone.muted : tone.accent,
                         fontWeight: FontWeight.w700,
@@ -319,7 +355,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       _wait = 0;
                     }),
                     child: Text(
-                      'تغيير البريد',
+                      _t('تغيير البريد', 'Change email'),
                       style: TextStyle(
                         color: tone.accent,
                         fontWeight: FontWeight.w700,
@@ -359,10 +395,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 }
 
 class _Steps extends StatelessWidget {
-  const _Steps({required this.tone, required this.sent});
+  const _Steps({
+    required this.tone,
+    required this.sent,
+    required this.english,
+  });
 
   final SettingsTone tone;
   final bool sent;
+  final bool english;
 
   @override
   Widget build(BuildContext context) {
@@ -396,14 +437,14 @@ class _Steps extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        dot(1, 'البريد', true),
+        dot(1, english ? 'Email' : 'البريد', true),
         Container(
           width: 60,
           height: 2,
           margin: const EdgeInsets.only(bottom: 20, left: 8, right: 8),
           color: sent ? tone.accent : tone.line,
         ),
-        dot(2, 'كلمة جديدة', sent),
+        dot(2, english ? 'New password' : 'كلمة جديدة', sent),
       ],
     );
   }
