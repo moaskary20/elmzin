@@ -14,6 +14,8 @@ class AppNotice {
     required this.title,
     required this.body,
     required this.read,
+    this.titleEn,
+    this.bodyEn,
     this.createdAt,
     this.bookingId,
   });
@@ -21,11 +23,18 @@ class AppNotice {
   factory AppNotice.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
     final booking = data is Map ? data['booking_id'] : null;
+    String? optional(String key) {
+      final value = '${json[key] ?? ''}'.trim();
+      return value.isEmpty ? null : value;
+    }
+
     return AppNotice(
       id: (json['id'] as num).toInt(),
       type: '${json['type'] ?? ''}',
       title: '${json['title'] ?? ''}',
+      titleEn: optional('title_en'),
       body: '${json['body'] ?? ''}',
+      bodyEn: optional('body_en'),
       read: json['read'] == true,
       createdAt: DateTime.tryParse('${json['created_at'] ?? ''}')?.toLocal(),
       bookingId: booking is num ? booking.toInt() : null,
@@ -35,7 +44,9 @@ class AppNotice {
   final int id;
   final String type;
   final String title;
+  final String? titleEn;
   final String body;
+  final String? bodyEn;
   final bool read;
   final DateTime? createdAt;
   final int? bookingId;
@@ -44,7 +55,9 @@ class AppNotice {
     id: id,
     type: type,
     title: title,
+    titleEn: titleEn,
     body: body,
+    bodyEn: bodyEn,
     read: read ?? this.read,
     createdAt: createdAt,
     bookingId: bookingId,

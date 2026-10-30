@@ -50,9 +50,16 @@ class Booking extends Model
         'card' => 'فيزا',
     ];
 
-    public function paymentLabel(): string
+    public const PAYMENT_LABELS_EN = [
+        'cash' => 'Pay on arrival',
+        'card' => 'Visa',
+    ];
+
+    public function paymentLabel(bool $english = false): string
     {
-        $label = self::PAYMENT_LABELS[$this->payment_method] ?? self::PAYMENT_LABELS['cash'];
+        $labels = $english ? self::PAYMENT_LABELS_EN : self::PAYMENT_LABELS;
+        $fallback = $english ? self::PAYMENT_LABELS_EN['cash'] : self::PAYMENT_LABELS['cash'];
+        $label = $labels[$this->payment_method] ?? $fallback;
 
         return $this->payment_method === 'card' && $this->card_last4
             ? $label.' •••• '.$this->card_last4

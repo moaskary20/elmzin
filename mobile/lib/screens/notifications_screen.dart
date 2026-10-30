@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/account_store.dart';
+import '../data/localized.dart';
 import '../data/notifications_store.dart';
 import '../theme/app_colors.dart';
 import 'login_screen.dart';
@@ -42,9 +43,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
   }
 
+  bool get _english => AccountStore.instance.isEnglish;
+
   @override
   Widget build(BuildContext context) {
-    final english = Directionality.of(context) == TextDirection.ltr;
+    final english = _english;
     final store = NotificationsStore.instance;
 
     return ColoredBox(
@@ -332,7 +335,7 @@ class _NoticeCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            item.title,
+                            localized(item.title, item.titleEn, english),
                             style: TextStyle(
                               color: AppColors.gold,
                               fontSize: 15,
@@ -365,7 +368,7 @@ class _NoticeCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.body,
+                      localized(item.body, item.bodyEn, english),
                       style: TextStyle(
                         color: AppColors.goldSoft,
                         fontSize: 13,

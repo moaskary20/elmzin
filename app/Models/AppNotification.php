@@ -11,7 +11,9 @@ class AppNotification extends Model
         'user_id',
         'type',
         'title',
+        'title_en',
         'body',
+        'body_en',
         'data',
         'read_at',
     ];
