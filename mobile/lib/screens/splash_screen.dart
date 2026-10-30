@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 
 import '../data/account_store.dart';
 import '../theme/system_bars.dart';
-import 'app_shell.dart';
 import 'language_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -47,14 +46,12 @@ class _SplashScreenState extends State<SplashScreen> {
   void _openNext() {
     if (_left || !mounted) return;
     _left = true;
-    final store = AccountStore.instance;
-    final Widget next = store.localeChosen
-        ? AppShell(locale: Locale(AccountStore.normalizeLocale(store.locale)))
-        : const LanguageScreen();
+    // Always ask for language on each cold start so the user can switch
+    // Arabic/English every time the app is opened.
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, _, _) => next,
+        pageBuilder: (_, _, _) => const LanguageScreen(),
         transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
         },
