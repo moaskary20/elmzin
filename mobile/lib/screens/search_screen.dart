@@ -93,7 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
   static const _maxRadius = 50.0;
 
   final _query = TextEditingController();
-  final _map = Completer<GoogleMapController>();
+  Completer<GoogleMapController> _map = Completer<GoogleMapController>();
   List<HomeSalon> _salons = HomeSalon.fallback;
   List<HomeCategory> _categories = HomeCategory.fallback;
   final Set<String> _selectedCategories = {};
@@ -104,17 +104,30 @@ class _SearchScreenState extends State<SearchScreen> {
   double _lat = HomeSalon.originLatitude;
   double _lng = HomeSalon.originLongitude;
   var _origin = _Origin.fallback;
-  String? _address;
+  MapAddress? _place;
   var _locating = false;
   String? _locationNote;
 
   bool get _english => widget.locale.languageCode == 'en';
+
+  String? get _addressLine => _place?.lineFor(_english);
 
   @override
   void initState() {
     super.initState();
     _load();
     _useDevice();
+  }
+
+  @override
+  void didUpdateWidget(covariant SearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.locale.languageCode != widget.locale.languageCode) {
+      // Rebuild the map under the new locale and accept a fresh controller.
+      _map = Completer<GoogleMapController>();
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) => _moveCamera());
+    }
   }
 
   @override
@@ -160,7 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _lat = found!.$1;
       _lng = found.$2;
       _origin = _Origin.device;
-      _address = null;
+      _place = null;
       _locating = false;
     });
     _moveCamera();
@@ -171,7 +184,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final place = await MapGeocoder.resolve(lat, lng);
       if (!mounted || lat != _lat || lng != _lng) return;
-      setState(() => _address = place.address);
+      setState(() => _place = place);
     } catch (_) {}
   }
 
@@ -184,7 +197,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _lat = picked.latitude;
       _lng = picked.longitude;
       _origin = _Origin.picked;
-      _address = picked.address;
+      _place = picked;
       _locationNote = null;
     });
     _moveCamera();
@@ -356,7 +369,7 @@ class _SearchScreenState extends State<SearchScreen> {
             _LocationCard(
               english: _english,
               origin: _origin,
-              address: _address,
+              address: _addressLine,
               note: _locationNote,
               locating: _locating,
               onLocate: _useDevice,
@@ -484,9 +497,13 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         child: SearchScreen.useMap
             ? GoogleMap(
+                key: ValueKey('search-map-${_english ? 'en' : 'ar'}'),
                 initialCameraPosition: CameraPosition(target: user, zoom: 12),
                 onMapCreated: (controller) {
-                  if (!_map.isCompleted) _map.complete(controller);
+                  if (!_map.isCompleted) {
+                    _map.complete(controller);
+                  }
+                  _moveCamera();
                 },
                 myLocationEnabled: _origin == _Origin.device,
                 myLocationButtonEnabled: false,
@@ -501,7 +518,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     infoWindow: InfoWindow(
                       title: _english ? 'You are here' : 'موقعك',
-                      snippet: _address,
+                      snippet: _addressLine,
                     ),
                     zIndexInt: 2,
                   ),

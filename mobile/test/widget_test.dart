@@ -1138,7 +1138,9 @@ void main() {
     SearchScreen.locate = () async => (30.0561, 31.3300);
     MapGeocoder.resolve = (lat, lng) async => MapAddress(
       address: 'مدينة نصر، القاهرة',
+      addressEn: 'Nasr City, Cairo',
       city: 'القاهرة',
+      cityEn: 'Cairo',
       latitude: lat,
       longitude: lng,
     );

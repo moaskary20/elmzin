@@ -22,6 +22,7 @@ class MuzayenApp extends StatefulWidget {
 
 class _MuzayenAppState extends State<MuzayenApp> {
   var _dark = AccountStore.instance.darkMode;
+  var _locale = AccountStore.normalizeLocale(AccountStore.instance.locale);
 
   @override
   void initState() {
@@ -35,12 +36,15 @@ class _MuzayenAppState extends State<MuzayenApp> {
     super.dispose();
   }
 
-  /// Brand colors are read during build, so a mode change rebuilds every
+  /// Brand colors / locale are read during build, so a change rebuilds every
   /// screen in place without losing navigation or form state.
   void _onAccount() {
     final dark = AccountStore.instance.darkMode;
-    if (dark == _dark) return;
+    final locale = AccountStore.normalizeLocale(AccountStore.instance.locale);
+    final changed = dark != _dark || locale != _locale;
+    if (!changed) return;
     _dark = dark;
+    _locale = locale;
     setState(() {});
     void rebuild(Element element) {
       element.markNeedsBuild();
@@ -52,9 +56,12 @@ class _MuzayenAppState extends State<MuzayenApp> {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Locale(_locale);
     return MaterialApp(
       title: 'المزين',
       debugShowCheckedModeBanner: false,
+      locale: locale,
+      supportedLocales: const [Locale('ar'), Locale('en')],
       theme: ThemeData(
         useMaterial3: true,
         brightness: _dark ? Brightness.dark : Brightness.light,
@@ -75,6 +82,14 @@ class _MuzayenAppState extends State<MuzayenApp> {
               ),
       ),
       home: const SplashScreen(),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: _locale == 'en'
+              ? TextDirection.ltr
+              : TextDirection.rtl,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

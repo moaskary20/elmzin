@@ -257,6 +257,20 @@ class MapAddress {
   final String? cityEn;
   final double latitude;
   final double longitude;
+
+  String lineFor(bool english) {
+    if (!english) return address;
+    final englishLine = addressEn?.trim();
+    if (englishLine != null && englishLine.isNotEmpty) return englishLine;
+    return address;
+  }
+
+  String? cityFor(bool english) {
+    if (!english) return city;
+    final englishCity = cityEn?.trim();
+    if (englishCity != null && englishCity.isNotEmpty) return englishCity;
+    return city;
+  }
 }
 
 class MapGeocoder {
