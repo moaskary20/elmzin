@@ -26,6 +26,7 @@ class HomeSalon {
     this.verified = false,
     this.reviewsCount = 0,
     this.services = const [],
+    this.servicesEn = const [],
   });
 
   final int id;
@@ -46,8 +47,19 @@ class HomeSalon {
   final bool verified;
   final int reviewsCount;
   final List<String> services;
+  final List<String> servicesEn;
 
   String nameFor(bool english) => localized(name, nameEn, english);
+
+  String placeFor(bool english) => placeLineFor(
+        english: english,
+        address: address,
+        city: city,
+        district: district,
+      );
+
+  List<String> servicesFor(bool english) =>
+      english && servicesEn.isNotEmpty ? servicesEn : services;
 
   bool belongsToCategory(String slug) {
     if (categorySlugs.contains(slug)) return true;
@@ -68,11 +80,7 @@ class HomeSalon {
     'الجيزة': (30.0131, 31.2089),
   };
 
-  String get place {
-    final line = address?.trim();
-    if (line != null && line.isNotEmpty) return line;
-    return district.isEmpty ? city : '$district، $city';
-  }
+  String get place => placeFor(false);
 
   double get distanceKm => distanceFrom(originLatitude, originLongitude);
 
@@ -245,6 +253,9 @@ class SalonsApi {
                 : 0,
             services: row['services'] is List
                 ? (row['services'] as List).map((name) => '$name').toList()
+                : const [],
+            servicesEn: row['services_en'] is List
+                ? (row['services_en'] as List).map((name) => '$name').toList()
                 : const [],
           ),
         )

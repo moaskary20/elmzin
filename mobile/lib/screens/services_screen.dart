@@ -598,7 +598,9 @@ class _ServiceTile extends StatelessWidget {
                         _Meta(
                           icon: Icons.storefront_rounded,
                           text: english
-                              ? '${group.salons} salons'
+                              ? (group.salons == 1
+                                  ? '1 salon'
+                                  : '${group.salons} salons')
                               : '${group.salons} صالون',
                         ),
                         _Meta(
@@ -666,7 +668,7 @@ class _OffersSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height * 0.75;
     final description = group.offers
-        .map((offer) => offer.description)
+        .map((offer) => offer.descriptionFor(english))
         .firstWhere((text) => text.trim().isNotEmpty, orElse: () => '');
 
     return ConstrainedBox(
@@ -709,7 +711,9 @@ class _OffersSheet extends StatelessWidget {
                         ),
                         Text(
                           english
-                              ? 'Available at ${group.salons} salons'
+                              ? (group.salons == 1
+                                  ? 'Available at 1 salon'
+                                  : 'Available at ${group.salons} salons')
                               : 'متوفرة في ${group.salons} صالون',
                           style: TextStyle(
                             color: AppColors.goldSoft,
@@ -840,7 +844,7 @@ class _OfferRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      offer.place,
+                      offer.placeFor(english),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: AppColors.goldSoft, fontSize: 12),
@@ -929,14 +933,33 @@ class _ServiceIcon extends StatelessWidget {
   final double size;
 
   IconData get _icon {
-    if (name.contains('لحية')) return Icons.face_retouching_natural_rounded;
-    if (name.contains('أطفال')) return Icons.child_care_rounded;
-    if (name.contains('صبغ')) return Icons.palette_rounded;
-    if (name.contains('بشرة')) return Icons.spa_rounded;
-    if (name.contains('مكياج')) return Icons.brush_rounded;
-    if (name.contains('تسريح')) return Icons.auto_awesome_rounded;
-    if (name.contains('رسم')) return Icons.draw_rounded;
-    if (name.contains('قص') || name.contains('حلاق')) {
+    final key = name.toLowerCase();
+    if (key.contains('لحية') || key.contains('beard')) {
+      return Icons.face_retouching_natural_rounded;
+    }
+    if (key.contains('أطفال') || key.contains('kids') || key.contains('child')) {
+      return Icons.child_care_rounded;
+    }
+    if (key.contains('صبغ') || key.contains('color') || key.contains('highlight')) {
+      return Icons.palette_rounded;
+    }
+    if (key.contains('بشرة') || key.contains('skin') || key.contains('facial')) {
+      return Icons.spa_rounded;
+    }
+    if (key.contains('مكياج') || key.contains('makeup')) {
+      return Icons.brush_rounded;
+    }
+    if (key.contains('تسريح') || key.contains('style') || key.contains('blow')) {
+      return Icons.auto_awesome_rounded;
+    }
+    if (key.contains('رسم') || key.contains('paint') || key.contains('design')) {
+      return Icons.draw_rounded;
+    }
+    if (key.contains('قص') ||
+        key.contains('حلاق') ||
+        key.contains('cut') ||
+        key.contains('haircut') ||
+        key.contains('shave')) {
       return Icons.content_cut_rounded;
     }
     return Icons.auto_awesome_outlined;

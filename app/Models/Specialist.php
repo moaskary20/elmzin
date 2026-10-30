@@ -12,6 +12,7 @@ class Specialist extends Model
     protected $fillable = [
         'salon_id',
         'name',
+        'name_en',
         'title',
         'title_en',
         'phone',

@@ -53,13 +53,23 @@ class SubscriptionPlanResource extends Resource
                         ->label('اسم الباقة')
                         ->required()
                         ->maxLength(120),
+                    TextInput::make('name_en')
+                        ->label('اسم الباقة (EN)')
+                        ->maxLength(120),
                     TextInput::make('badge')
                         ->label('شارة مميزة')
                         ->placeholder('مثال: مجاناً لمدة سنة • الأكثر طلباً')
                         ->maxLength(60),
+                    TextInput::make('badge_en')
+                        ->label('شارة مميزة (EN)')
+                        ->maxLength(60),
                     TextInput::make('tagline')
                         ->label('وصف مختصر')
                         ->placeholder('سطر واحد يظهر تحت اسم الباقة')
+                        ->maxLength(255)
+                        ->columnSpanFull(),
+                    TextInput::make('tagline_en')
+                        ->label('وصف مختصر (EN)')
                         ->maxLength(255)
                         ->columnSpanFull(),
                     Toggle::make('is_active')
@@ -112,6 +122,19 @@ class SubscriptionPlanResource extends Resource
                         ->reorderable()
                         ->defaultItems(1)
                         ->columnSpanFull(),
+                    Repeater::make('features_en')
+                        ->label('المميزات (EN)')
+                        ->simple(
+                            TextInput::make('text')
+                                ->label('Feature')
+                                ->hiddenLabel()
+                                ->placeholder('Example: Featured placement on the home screen')
+                                ->maxLength(160),
+                        )
+                        ->addActionLabel('Add feature')
+                        ->reorderable()
+                        ->defaultItems(0)
+                        ->columnSpanFull(),
                 ])
                 ->columnSpanFull(),
             Section::make('قوانين الاشتراك')
@@ -121,6 +144,11 @@ class SubscriptionPlanResource extends Resource
                         ->label('القوانين')
                         ->rows(7)
                         ->helperText('اكتب كل قانون في سطر مستقل، وسيظهر كبند مرقّم في التطبيق.')
+                        ->columnSpanFull(),
+                    Textarea::make('terms_en')
+                        ->label('القوانين (EN)')
+                        ->rows(7)
+                        ->helperText('One term per line for the English app.')
                         ->columnSpanFull(),
                     TextInput::make('max_services')
                         ->label('الحد الأقصى للخدمات')

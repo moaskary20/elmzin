@@ -53,6 +53,7 @@ class OwnSpecialist {
     required this.id,
     required this.name,
     required this.isActive,
+    this.nameEn,
     this.title,
     this.titleEn,
     this.phone,
@@ -60,16 +61,20 @@ class OwnSpecialist {
 
   final int id;
   final String name;
+  final String? nameEn;
   final bool isActive;
   final String? title;
   final String? titleEn;
   final String? phone;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
 
   String titleFor(bool english) => localized(title ?? '', titleEn, english);
 
   factory OwnSpecialist.fromJson(Map<String, dynamic> row) => OwnSpecialist(
     id: (row['id'] as num).toInt(),
     name: row['name'] as String? ?? '',
+    nameEn: row['name_en'] as String?,
     isActive: row['is_active'] as bool? ?? true,
     title: row['title'] as String?,
     titleEn: row['title_en'] as String?,

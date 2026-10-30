@@ -76,7 +76,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
         _loading = false;
         _error = error is BookingsException
             ? error.message
-            : 'تعذر تحميل الحجوزات.';
+            : (Directionality.of(context) == TextDirection.ltr
+                ? 'Could not load bookings.'
+                : 'تعذر تحميل الحجوزات.');
       });
     }
   }
@@ -161,7 +163,12 @@ class _BookingsScreenState extends State<BookingsScreen> {
       await _load();
     } catch (error) {
       if (!mounted) return;
-      _toast(error is BookingsException ? error.message : 'تعذر إلغاء الموعد.');
+      final english = Directionality.of(context) == TextDirection.ltr;
+      _toast(
+        error is BookingsException
+            ? error.message
+            : (english ? 'Could not cancel the visit.' : 'تعذر إلغاء الموعد.'),
+      );
     }
   }
 
@@ -1091,7 +1098,9 @@ class _ReviewSheetState extends State<_ReviewSheet> {
         _saving = false;
         _error = error is BookingsException
             ? error.message
-            : 'تعذر إرسال التقييم.';
+            : (Directionality.of(context) == TextDirection.ltr
+                ? 'Could not send the review.'
+                : 'تعذر إرسال التقييم.');
       });
     }
   }

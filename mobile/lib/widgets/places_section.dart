@@ -735,7 +735,7 @@ class _SalonCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      salon.place,
+                      salon.placeFor(english),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: palette.soft, fontSize: 12),

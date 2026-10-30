@@ -233,6 +233,7 @@ class SalonProfileController extends Controller
 
         return $request->validate([
             'name' => [$required, 'string', 'max:120'],
+            'name_en' => ['sometimes', 'nullable', 'string', 'max:120'],
             'title' => ['sometimes', 'nullable', 'string', 'max:120'],
             'title_en' => ['sometimes', 'nullable', 'string', 'max:120'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
@@ -298,6 +299,7 @@ class SalonProfileController extends Controller
                 'specialists' => $salon->specialists->sortBy('name')->values()->map(fn (Specialist $specialist): array => [
                     'id' => $specialist->id,
                     'name' => $specialist->name,
+                    'name_en' => $specialist->name_en,
                     'title' => $specialist->title,
                     'title_en' => $specialist->title_en,
                     'phone' => $specialist->phone,

@@ -24,9 +24,9 @@ class SalonController extends Controller
         $salons = Salon::query()
             ->where('is_active', true)
             ->with([
-                'category:id,name,slug',
-                'categories:id,name,slug',
-                'services' => fn ($query) => $query->where('is_active', true)->select('id', 'salon_id', 'name'),
+                'category:id,name,name_en,slug',
+                'categories:id,name,name_en,slug',
+                'services' => fn ($query) => $query->where('is_active', true)->select('id', 'salon_id', 'name', 'name_en'),
             ])
             ->withMin(['services as min_price' => function ($query): void {
                 $query->where('is_active', true);
@@ -63,6 +63,9 @@ class SalonController extends Controller
                 'max_price' => $salon->max_price !== null ? (float) $salon->max_price : null,
                 'verified' => $salon->verification_status === VerificationStatus::Verified,
                 'services' => $salon->services->pluck('name')->values(),
+                'services_en' => $salon->services->map(
+                    fn ($service) => filled($service->name_en) ? $service->name_en : $service->name,
+                )->values(),
             ])
             ->values();
 
@@ -74,7 +77,7 @@ class SalonController extends Controller
         $services = Service::query()
             ->where('is_active', true)
             ->whereHas('salon', fn ($query) => $query->where('is_active', true))
-            ->with('salon.category:id,name,slug')
+            ->with('salon.category:id,name,name_en,slug')
             ->withCount(['bookings' => fn ($query) => $query->where('status', '!=', BookingStatus::Cancelled->value)])
             ->orderBy('name')
             ->orderBy('price')
@@ -111,8 +114,8 @@ class SalonController extends Controller
         abort_unless($salon->is_active, 404);
 
         $salon->load([
-            'category:id,name,slug',
-            'categories:id,name,slug',
+            'category:id,name,name_en,slug',
+            'categories:id,name,name_en,slug',
             'media',
             'workingHours',
             'services' => fn ($query) => $query->where('is_active', true)->orderBy('price')->orderBy('id'),
@@ -161,6 +164,8 @@ class SalonController extends Controller
                     'id' => $service->id,
                     'name' => $service->name,
                     'name_en' => $service->name_en,
+                    'description' => $service->description,
+                    'description_en' => $service->description_en,
                     'price' => (float) $service->price,
                     'duration_minutes' => $service->duration_minutes,
                     'specialist_ids' => $service->specialists->pluck('id')->values(),
@@ -168,6 +173,7 @@ class SalonController extends Controller
                 'specialists' => $salon->specialists->map(fn (Specialist $specialist): array => [
                     'id' => $specialist->id,
                     'name' => $specialist->name,
+                    'name_en' => $specialist->name_en,
                     'title' => $specialist->title,
                     'title_en' => $specialist->title_en,
                 ])->values(),

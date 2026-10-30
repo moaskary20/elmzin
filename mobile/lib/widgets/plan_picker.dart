@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../data/account_store.dart';
+
 import '../data/subscription_plans.dart';
 import '../screens/cart_screen.dart' show ConfettiBurst;
 import '../theme/settings_tone.dart';
+
+
+bool get _planEnglish => AccountStore.instance.isEnglish;
+String _pt(String ar, String en) => _planEnglish ? en : ar;
+
 
 class PlanPicker extends StatelessWidget {
   const PlanPicker({
@@ -228,25 +235,25 @@ class _PlanCardState extends State<_PlanCard>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (plan.badge != null) ...[
+                                if (plan.badgeFor(_planEnglish) != null) ...[
                                   _ShineBadge(
-                                    text: plan.badge!,
+                                    text: plan.badgeFor(_planEnglish)!,
                                     tone: tone,
                                     shine: _shine,
                                   ),
                                   const SizedBox(height: 6),
                                 ],
                                 Text(
-                                  plan.name,
+                                  plan.nameFor(_planEnglish),
                                   style: TextStyle(
                                     color: tone.text,
                                     fontSize: 19,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                if (plan.tagline != null)
+                                if (plan.taglineFor(_planEnglish) != null)
                                   Text(
-                                    plan.tagline!,
+                                    plan.taglineFor(_planEnglish)!,
                                     style: TextStyle(
                                       color: tone.muted,
                                       fontSize: 12.5,
@@ -293,7 +300,7 @@ class _PlanCardState extends State<_PlanCard>
                         crossAxisAlignment: WrapCrossAlignment.end,
                         children: [
                           Text(
-                            plan.priceLabel,
+                            plan.priceLabelFor(_planEnglish),
                             key: Key('plan-price-${plan.id}'),
                             style: TextStyle(
                               color: gold,
@@ -306,8 +313,8 @@ class _PlanCardState extends State<_PlanCard>
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
                               plan.isFree
-                                  ? 'لمدة ${plan.durationLabel}'
-                                  : '/ ${plan.durationLabel}',
+                                  ? _pt('لمدة ${plan.durationLabelFor(false)}', 'for ${plan.durationLabelFor(true)}')
+                                  : '/ ${plan.durationLabelFor(_planEnglish)}',
                               style: TextStyle(
                                 color: tone.text,
                                 fontSize: 14,
@@ -320,14 +327,14 @@ class _PlanCardState extends State<_PlanCard>
                       if (plan.isFree) ...[
                         const SizedBox(height: 6),
                         Text(
-                          'بدون أي بيانات دفع • يبدأ فور التسجيل',
+                          _pt('بدون أي بيانات دفع • يبدأ فور التسجيل', 'No payment details • starts right after signup'),
                           style: TextStyle(color: tone.muted, fontSize: 12),
                         ),
                       ],
                       const SizedBox(height: 16),
                       Container(height: 1, color: tone.line),
                       const SizedBox(height: 14),
-                      for (final feature in plan.features)
+                      for (final feature in plan.featuresFor(_planEnglish))
                         Padding(
                           padding: const EdgeInsets.only(bottom: 9),
                           child: Row(
@@ -361,19 +368,19 @@ class _PlanCardState extends State<_PlanCard>
                             tone: tone,
                             icon: Icons.content_cut_rounded,
                             text: plan.maxServices == null
-                                ? 'خدمات بلا حدود'
-                                : 'حتى ${plan.maxServices} خدمة',
+                                ? _pt('خدمات بلا حدود', 'Unlimited services')
+                                : _pt('حتى ${plan.maxServices} خدمة', 'Up to ${plan.maxServices} services'),
                           ),
                           _Chip(
                             tone: tone,
                             icon: Icons.groups_2_outlined,
                             text: plan.maxSpecialists == null
-                                ? 'أخصائيون بلا حدود'
-                                : 'حتى ${plan.maxSpecialists} أخصائي',
+                                ? _pt('أخصائيون بلا حدود', 'Unlimited specialists')
+                                : _pt('حتى ${plan.maxSpecialists} أخصائي', 'Up to ${plan.maxSpecialists} specialists'),
                           ),
                         ],
                       ),
-                      if (plan.terms.isNotEmpty) ...[
+                      if (plan.termsFor(_planEnglish).isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Align(
                           alignment: AlignmentDirectional.centerStart,
@@ -388,7 +395,10 @@ class _PlanCardState extends State<_PlanCard>
                             ),
                             icon: const Icon(Icons.gavel_rounded, size: 18),
                             label: Text(
-                              'قوانين الاشتراك (${plan.terms.length})',
+                              _pt(
+                                'قوانين الاشتراك (${plan.terms.length})',
+                                'Subscription terms (${plan.terms.length})',
+                              ),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 decoration: TextDecoration.underline,
@@ -548,14 +558,14 @@ class _TermsCheck extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      'أوافق على ',
+                      _pt('أوافق على ', 'I agree to the '),
                       style: TextStyle(color: tone.text, fontSize: 13.5),
                     ),
                     GestureDetector(
                       key: const Key('register-terms-open'),
                       onTap: onOpen,
                       child: Text(
-                        'قوانين الاشتراك',
+                        _pt('قوانين الاشتراك', 'Subscription terms'),
                         style: TextStyle(
                           color: tone.accent,
                           fontSize: 13.5,
@@ -566,7 +576,7 @@ class _TermsCheck extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      ' في ${plan.name}',
+                      _pt(' في ${plan.nameFor(false)}', ' for ${plan.nameFor(true)}'),
                       style: TextStyle(color: tone.text, fontSize: 13.5),
                     ),
                   ],
@@ -593,7 +603,7 @@ Future<bool?> showPlanTerms(
       borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
     ),
     builder: (sheet) => Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: _planEnglish ? TextDirection.ltr : TextDirection.rtl,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(sheet).height * 0.82,
@@ -635,7 +645,7 @@ Future<bool?> showPlanTerms(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'قوانين الاشتراك',
+                            _pt('قوانين الاشتراك', 'Subscription terms'),
                             style: TextStyle(
                               color: tone.text,
                               fontSize: 18,
@@ -643,7 +653,7 @@ Future<bool?> showPlanTerms(
                             ),
                           ),
                           Text(
-                            '${plan.name} • ${plan.priceLabel} لمدة ${plan.durationLabel}',
+                             '${plan.nameFor(_planEnglish)} • ${plan.priceLabelFor(_planEnglish)} ' + (_planEnglish ? 'for ${plan.durationLabelFor(true)}' : 'لمدة ${plan.durationLabelFor(false)}'),
                             style: TextStyle(color: tone.muted, fontSize: 12.5),
                           ),
                         ],
@@ -656,7 +666,7 @@ Future<bool?> showPlanTerms(
                 child: ListView.separated(
                   shrinkWrap: true,
                   padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
-                  itemCount: plan.terms.length,
+                  itemCount: plan.termsFor(_planEnglish).length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) => Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -681,7 +691,7 @@ Future<bool?> showPlanTerms(
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          plan.terms[index],
+                          plan.termsFor(_planEnglish)[index],
                           style: TextStyle(
                             color: tone.text,
                             fontSize: 14,
@@ -707,8 +717,7 @@ Future<bool?> showPlanTerms(
                     ),
                   ),
                   icon: const Icon(Icons.verified_rounded),
-                  label: const Text(
-                    'قرأت القوانين وأوافق عليها',
+                  label: Text(_pt('قرأت القوانين وأوافق عليها', 'I have read and agree to the terms'),
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -733,7 +742,7 @@ Future<void> showSubscriptionWelcome(
     context: context,
     barrierDismissible: false,
     builder: (dialog) => Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: _planEnglish ? TextDirection.ltr : TextDirection.rtl,
       child: Stack(
         children: [
           Center(
@@ -785,7 +794,7 @@ Future<void> showSubscriptionWelcome(
                       ),
                       const SizedBox(height: 18),
                       Text(
-                        'تم تفعيل اشتراكك',
+                        _pt('تم تفعيل اشتراكك', 'Your subscription is active'),
                         style: TextStyle(
                           color: tone.text,
                           fontSize: 22,
@@ -794,7 +803,7 @@ Future<void> showSubscriptionWelcome(
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'مرحباً بك في ${plan.name}',
+                        _pt('مرحباً بك في ${plan.nameFor(false)}', 'Welcome to ${plan.nameFor(true)}'),
                         style: TextStyle(
                           color: tone.accent,
                           fontSize: 16,
@@ -813,8 +822,8 @@ Future<void> showSubscriptionWelcome(
                           children: [
                             Text(
                               plan.isFree
-                                  ? '${plan.priceLabel} لمدة ${plan.durationLabel}'
-                                  : '${plan.priceLabel} / ${plan.durationLabel}',
+                                  ? _pt('${plan.priceLabelFor(false)} لمدة ${plan.durationLabelFor(false)}', '${plan.priceLabelFor(true)} for ${plan.durationLabelFor(true)}')
+                                  : '${plan.priceLabelFor(_planEnglish)} / ${plan.durationLabelFor(_planEnglish)}',
                               style: TextStyle(
                                 color: tone.text,
                                 fontSize: 15,
@@ -823,7 +832,7 @@ Future<void> showSubscriptionWelcome(
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'ساري حتى $until',
+                              _pt('ساري حتى $until', 'Valid until $until'),
                               key: const Key('subscription-welcome-until'),
                               textDirection: TextDirection.rtl,
                               style: TextStyle(color: tone.muted, fontSize: 13),
@@ -833,7 +842,7 @@ Future<void> showSubscriptionWelcome(
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'سيظهر مركز التجميل للعملاء فور مراجعة الإدارة وتوثيقه، وسنرسل لك إشعاراً بذلك.',
+                        _pt('سيظهر مركز التجميل للعملاء فور مراجعة الإدارة وتوثيقه، وسنرسل لك إشعاراً بذلك.', 'Your beauty center will appear to clients once admin reviews and verifies it — we will notify you.'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: tone.muted,
@@ -853,8 +862,7 @@ Future<void> showSubscriptionWelcome(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text(
-                          'ابدأ الآن',
+                        child: Text(_pt('ابدأ الآن', 'Get started'),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,

@@ -281,7 +281,7 @@ class _SalonBody extends StatelessWidget {
             _meta(
               context,
               Icons.place_outlined,
-              detail.place,
+              detail.placeFor(english),
               key: const Key('salon-address'),
               onTap: () => _openMaps(context, detail),
             ),
@@ -338,7 +338,7 @@ class _SalonBody extends StatelessWidget {
               ),
               for (final specialist in specialists)
                 _SpecialistChip(
-                  name: specialist.name,
+                  name: specialist.nameFor(english),
                   title: specialist.titleFor(english),
                   selected: specialist.id == specialistId,
                   onTap: () => onSpecialist(specialist.id),

@@ -51,16 +51,23 @@ class SalonServiceItem {
     required this.durationMinutes,
     required this.specialistIds,
     this.nameEn,
+    this.description = '',
+    this.descriptionEn,
   });
 
   final int id;
   final String name;
   final String? nameEn;
+  final String description;
+  final String? descriptionEn;
   final double price;
   final int durationMinutes;
   final List<int> specialistIds;
 
   String nameFor(bool english) => localized(name, nameEn, english);
+
+  String descriptionFor(bool english) =>
+      localized(description, descriptionEn, english);
 }
 
 class SalonSpecialistItem {
@@ -68,13 +75,17 @@ class SalonSpecialistItem {
     required this.id,
     required this.name,
     required this.title,
+    this.nameEn,
     this.titleEn,
   });
 
   final int id;
   final String name;
+  final String? nameEn;
   final String title;
   final String? titleEn;
+
+  String nameFor(bool english) => localized(name, nameEn, english);
 
   String titleFor(bool english) => localized(title, titleEn, english);
 }
@@ -162,11 +173,14 @@ class SalonDetail {
 
   String categoryFor(bool english) => localized(category, categoryEn, english);
 
-  String get place {
-    final line = address?.trim();
-    if (line != null && line.isNotEmpty) return line;
-    return district.isEmpty ? city : '$district · $city';
-  }
+  String get place => placeFor(false);
+
+  String placeFor(bool english) => placeLineFor(
+        english: english,
+        address: address,
+        city: city,
+        district: district,
+      );
 
   String get mapQuery {
     final line = address?.trim();
@@ -372,6 +386,8 @@ class SalonDetailApi {
               id: service['id'] is int ? service['id'] as int : 0,
               name: '${service['name'] ?? ''}',
               nameEn: service['name_en'] as String?,
+              description: '${service['description'] ?? ''}',
+              descriptionEn: service['description_en'] as String?,
               price: service['price'] is num
                   ? (service['price'] as num).toDouble()
                   : 0,
@@ -391,6 +407,7 @@ class SalonDetailApi {
             (specialist) => SalonSpecialistItem(
               id: specialist['id'] is int ? specialist['id'] as int : 0,
               name: '${specialist['name'] ?? ''}',
+              nameEn: specialist['name_en'] as String?,
               title: '${specialist['title'] ?? ''}',
               titleEn: specialist['title_en'] as String?,
             ),

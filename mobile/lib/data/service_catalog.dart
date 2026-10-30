@@ -47,7 +47,13 @@ class ServiceOffer {
   final bool verified;
   final String? imageUrl;
 
-  String get place => district.isEmpty ? city : '$district، $city';
+  String get place => placeFor(false);
+
+  String placeFor(bool english) => placeLineFor(
+        english: english,
+        city: city,
+        district: district,
+      );
 
   String nameFor(bool english) => localized(name, nameEn, english);
 

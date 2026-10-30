@@ -37,8 +37,12 @@ class SpecialistsRelationManager extends RelationManager
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('اسم الأخصائي')
+                ->label('اسم الأخصائي (عربي)')
                 ->required()
+                ->maxLength(255),
+            TextInput::make('name_en')
+                ->label('اسم الأخصائي (English)')
+                ->placeholder('Ahmed, Sara…')
                 ->maxLength(255),
             TextInput::make('title')
                 ->label('المسمّى (عربي)')
@@ -106,9 +110,11 @@ class SpecialistsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('name')
                     ->label('الأخصائي')
-                    ->searchable(),
+                    ->description(fn ($record): ?string => $record->name_en)
+                    ->searchable(['name', 'name_en']),
                 TextColumn::make('title')
-                    ->label('المسمّى'),
+                    ->label('المسمّى')
+                    ->description(fn ($record): ?string => $record->title_en),
                 TextColumn::make('services.name')
                     ->label('الخدمات')
                     ->badge(),

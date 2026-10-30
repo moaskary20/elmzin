@@ -20,35 +20,56 @@ import 'package:muzayen/widgets/plan_picker.dart';
 enum _SalonStep {
   plan(
     'اختر باقة الاشتراك',
+    'Choose a subscription plan',
     'ابدأ رحلتك مع المزين، ويمكنك الترقية لاحقاً.',
+    'Start with Al-Muzayyin — you can upgrade later.',
     Icons.workspace_premium_outlined,
   ),
   services(
     'الخدمات والأسعار',
+    'Services & prices',
     'اختر أقسام مركز التجميل وحدد سعر كل خدمة.',
+    'Pick your center categories and set each service price.',
     Icons.content_cut_rounded,
   ),
   team(
     'فريق العمل',
+    'Team',
     'أضف الأخصائيين الذين يستقبلون الحجوزات.',
+    'Add the specialists who take bookings.',
     Icons.groups_2_outlined,
   ),
   hours(
     'مواعيد العمل',
+    'Working hours',
     'حدد أيام وساعات استقبال العملاء.',
+    'Set the days and hours you welcome clients.',
     Icons.schedule_rounded,
   ),
   details(
     'بيانات مركز التجميل',
+    'Beauty center details',
     'الصورة وبيانات التواصل والعنوان.',
+    'Photos, contact details, and address.',
     Icons.storefront_outlined,
   );
 
-  const _SalonStep(this.title, this.hint, this.icon);
+  const _SalonStep(
+    this.titleAr,
+    this.titleEn,
+    this.hintAr,
+    this.hintEn,
+    this.icon,
+  );
 
-  final String title;
-  final String hint;
+  final String titleAr;
+  final String titleEn;
+  final String hintAr;
+  final String hintEn;
   final IconData icon;
+
+  String title(bool english) => english ? titleEn : titleAr;
+  String hint(bool english) => english ? hintEn : hintAr;
 }
 
 class _TeamMember {
@@ -117,6 +138,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<List<CatalogCategory>>? _catalog;
   List<CatalogCategory>? _categories;
 
+  bool get _english => AccountStore.instance.isEnglish;
+  String _t(String ar, String en) => _english ? en : ar;
+
+  static const _dayNames = <(int, String, String)>[
+    (6, 'السبت', 'Saturday'),
+    (0, 'الأحد', 'Sunday'),
+    (1, 'الإثنين', 'Monday'),
+    (2, 'الثلاثاء', 'Tuesday'),
+    (3, 'الأربعاء', 'Wednesday'),
+    (4, 'الخميس', 'Thursday'),
+    (5, 'الجمعة', 'Friday'),
+  ];
+
+  String _dayLabel(int day) {
+    for (final item in _dayNames) {
+      if (item.$1 == day) return _english ? item.$3 : item.$2;
+    }
+    return '';
+  }
+
   void _loadCatalog() {
     _catalog = SalonCatalogApi.load().then((items) {
       if (items.isNotEmpty) _categories = items;
@@ -132,18 +173,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   int _page = 0;
   final List<_TeamMember> _team = [_TeamMember()];
   List<OwnHour> _hours = [
-    for (final (day, label) in const [
-      (6, 'السبت'),
-      (0, 'الأحد'),
-      (1, 'الإثنين'),
-      (2, 'الثلاثاء'),
-      (3, 'الأربعاء'),
-      (4, 'الخميس'),
-      (5, 'الجمعة'),
-    ])
+    for (final item in _dayNames)
       OwnHour(
-        day: day,
-        label: label,
+        day: item.$1,
+        label: item.$2,
         isClosed: false,
         opensAt: '10:00',
         closesAt: '22:00',
@@ -223,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (sheet) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: _english ? TextDirection.ltr : TextDirection.rtl,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -235,14 +268,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   tone,
                   'gallery',
                   Icons.photo_library_outlined,
-                  'اختيار من معرض الصور',
+                  _t('اختيار من معرض الصور', 'Choose from gallery'),
                 ),
                 _photoAction(
                   sheet,
                   tone,
                   'camera',
                   Icons.photo_camera_outlined,
-                  'التقاط صورة بالكاميرا',
+                  _t('التقاط صورة بالكاميرا', 'Take a photo'),
                 ),
                 if (current != null)
                   _photoAction(
@@ -250,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     tone,
                     'remove',
                     Icons.delete_outline,
-                    'إزالة الصورة',
+                    _t('إزالة الصورة', 'Remove photo'),
                   ),
               ],
             ),
@@ -273,7 +306,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر فتح الصور.')));
+      ).showSnackBar(SnackBar(content: Text(_t('تعذر فتح الصور.', 'Could not open photos.'))));
     }
   }
 
@@ -292,14 +325,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر فتح الصور.')));
+      ).showSnackBar(SnackBar(content: Text(_t('تعذر فتح الصور.', 'Could not open photos.'))));
     }
   }
 
   Future<void> _addSalonVideo() async {
     if (_salonVideo != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يمكنك رفع فيديو واحد فقط.')),
+        SnackBar(content: Text(_t('يمكنك رفع فيديو واحد فقط.', 'You can upload only one video.'))),
       );
       return;
     }
@@ -314,7 +347,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر فتح الفيديو.')));
+      ).showSnackBar(SnackBar(content: Text(_t('تعذر فتح الفيديو.', 'Could not open the video.'))));
     }
   }
 
@@ -356,7 +389,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          _photo == null ? 'أضف صورتك الشخصية (اختياري)' : 'تم اختيار الصورة',
+          _photo == null ? _t('أضف صورتك الشخصية (اختياري)', 'Add your photo (optional)') : _t('تم اختيار الصورة', 'Photo selected'),
           key: const Key('register-photo-label'),
           style: TextStyle(color: tone.muted, fontSize: 13),
         ),
@@ -386,7 +419,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'صور وفيديو السليدر',
+                  _t('صور وفيديو السليدر', 'Slider photos & video'),
                   key: const Key('register-salon-photo-label'),
                   style: TextStyle(
                     color: tone.text,
@@ -395,7 +428,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'حتى ٨ صور، وفيديو واحد اختياري داخل سليدر صفحة المركز',
+                  _t('حتى ٨ صور، وفيديو واحد اختياري داخل سليدر صفحة المركز', 'Up to 8 photos and one optional video for the center page slider'),
                   style: TextStyle(color: tone.muted, fontSize: 12),
                 ),
                 const SizedBox(height: 12),
@@ -475,7 +508,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'تم اختيار فيديو للسليدر',
+                            _t('تم اختيار فيديو للسليدر', 'Slider video selected'),
                             style: TextStyle(
                               color: tone.text,
                               fontWeight: FontWeight.w600,
@@ -505,8 +538,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             color: tone.accent),
                         label: Text(
                           _salonPhotos.isEmpty
-                              ? 'إضافة صور'
-                              : 'إضافة صور (${_salonPhotos.length}/8)',
+                              ? _t('إضافة صور', 'Add photos')
+                              : _t('إضافة صور (${_salonPhotos.length}/8)', 'Add photos (${_salonPhotos.length}/8)'),
                           style: TextStyle(color: tone.text),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -523,7 +556,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         icon: Icon(Icons.video_library_outlined,
                             color: tone.accent),
                         label: Text(
-                          _salonVideo == null ? 'إضافة فيديو' : 'فيديو جاهز',
+                          _salonVideo == null ? _t('إضافة فيديو', 'Add video') : _t('فيديو جاهز', 'Video ready'),
                           style: TextStyle(color: tone.text),
                         ),
                         style: OutlinedButton.styleFrom(
@@ -580,8 +613,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 8),
                       Text(
                         path == null
-                            ? 'ارفع الشهادة الصحية'
-                            : 'تم اختيار الشهادة',
+                            ? _t('ارفع الشهادة الصحية', 'Upload health certificate')
+                            : _t('تم اختيار الشهادة', 'Certificate selected'),
                         key: const Key('register-health-certificate-label'),
                         style: TextStyle(
                           color: tone.text,
@@ -590,7 +623,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'صورة واضحة للشهادة الصحية سارية',
+                        _t('صورة واضحة للشهادة الصحية سارية', 'A clear photo of a valid health certificate'),
                         style: TextStyle(color: tone.muted, fontSize: 12),
                       ),
                     ],
@@ -615,7 +648,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Icon(Icons.edit_rounded, size: 14, color: tone.ink),
                         const SizedBox(width: 4),
                         Text(
-                          'تغيير',
+                          _t('تغيير', 'Change'),
                           style: TextStyle(
                             color: tone.ink,
                             fontSize: 12,
@@ -713,39 +746,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _check(_SalonStep step) {
     switch (step) {
       case _SalonStep.plan:
-        if (_plansLoading) return 'انتظر تحميل الباقات.';
+        if (_plansLoading) return _t('انتظر تحميل الباقات.', 'Wait for plans to load.');
         final plan = _plan;
-        if (_plans.isNotEmpty && plan == null) return 'اختر باقة الاشتراك.';
+        if (_plans.isNotEmpty && plan == null) return _t('اختر باقة الاشتراك.', 'Choose a subscription plan.');
         if (plan != null && plan.terms.isNotEmpty && !_terms) {
-          return 'يجب الموافقة على قوانين الاشتراك أولاً.';
+          return _t('يجب الموافقة على قوانين الاشتراك أولاً.', 'Please accept the subscription terms first.');
         }
       case _SalonStep.services:
-        if (_categoryIds.isEmpty) return 'اختر قسماً واحداً على الأقل.';
+        if (_categoryIds.isEmpty) return _t('اختر قسماً واحداً على الأقل.', 'Select at least one category.');
         if (_services.isEmpty) {
-          return 'اختر خدمة واحدة على الأقل من خدمات الأقسام.';
+          return _t('اختر خدمة واحدة على الأقل من خدمات الأقسام.', 'Select at least one service from the categories.');
         }
         final limit = _plan?.maxServices;
         if (limit != null && _services.length > limit) {
-          return '${_plan!.name} تسمح بحد أقصى $limit خدمة.';
+          return _t(
+            '${_plan!.nameFor(false)} تسمح بحد أقصى $limit خدمة.',
+            '${_plan!.nameFor(true)} allows up to $limit services.',
+          );
         }
-        if (_servicePrices() == null) return 'حدد سعر كل خدمة مختارة.';
+        if (_servicePrices() == null) return _t('حدد سعر كل خدمة مختارة.', 'Set a price for each selected service.');
       case _SalonStep.team:
-        if (_team.isEmpty) return 'أضف أخصائياً واحداً على الأقل.';
+        if (_team.isEmpty) return _t('أضف أخصائياً واحداً على الأقل.', 'Add at least one specialist.');
         if (_team.any((member) => member.name.text.trim().isEmpty)) {
-          return 'اكتب اسم كل أخصائي أو احذف الخانة الفارغة.';
+          return _t('اكتب اسم كل أخصائي أو احذف الخانة الفارغة.', 'Enter each specialist name or remove the empty row.');
         }
         final limit = _plan?.maxSpecialists;
         if (limit != null && _team.length > limit) {
-          return '${_plan!.name} تسمح بحد أقصى $limit أخصائي.';
+          return _t(
+            '${_plan!.nameFor(false)} تسمح بحد أقصى $limit أخصائي.',
+            '${_plan!.nameFor(true)} allows up to $limit specialists.',
+          );
         }
       case _SalonStep.hours:
         if (_hours.every((hour) => hour.isClosed)) {
-          return 'افتح يوماً واحداً على الأقل.';
+          return _t('افتح يوماً واحداً على الأقل.', 'Open at least one day.');
         }
         for (final hour in _hours) {
           if (!hour.isClosed &&
               (hour.closesAt ?? '').compareTo(hour.opensAt ?? '') <= 0) {
-            return 'وقت الإغلاق يجب أن يكون بعد وقت الفتح يوم ${hour.label}.';
+            final day = _dayLabel(hour.day);
+            return _t(
+              'وقت الإغلاق يجب أن يكون بعد وقت الفتح يوم $day.',
+              'Closing time must be after opening time on $day.',
+            );
           }
         }
       case _SalonStep.details:
@@ -758,15 +801,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_type == 'salon' &&
         _salonPhotos.isEmpty &&
         _salonVideo == null) {
-      return 'ارفع صورة واحدة على الأقل أو فيديو للسليدر.';
+      return _t('ارفع صورة واحدة على الأقل أو فيديو للسليدر.', 'Upload at least one photo or a slider video.');
     }
     if (_type == 'salon' && _healthCertificate == null) {
-      return 'ارفع صورة الشهادة الصحية.';
+      return _t('ارفع صورة الشهادة الصحية.', 'Upload the health certificate photo.');
     }
     if (_type == 'salon') {
       final nationalId = _normalizeDigits(_nationalId.text).trim();
       if (!RegExp(r'^\d{14}$').hasMatch(nationalId)) {
-        return 'أدخل رقم البطاقة الشخصية ١٤ رقماً.';
+        return _t('أدخل رقم البطاقة الشخصية ١٤ رقماً.', 'Enter the 14-digit national ID.');
       }
     }
     final address = _address;
@@ -776,7 +819,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _password.text.length < 6 ||
         address == null ||
         address.address.trim().isEmpty) {
-      return 'أكمل الاسم والبريد والهاتف والعنوان من الخريطة وكلمة مرور من ٦ أحرف على الأقل.';
+      return _t('أكمل الاسم والبريد والهاتف والعنوان من الخريطة وكلمة مرور من ٦ أحرف على الأقل.', 'Complete name, email, phone, map address, and a password of at least 6 characters.');
     }
     return null;
   }
@@ -924,7 +967,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _error = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'تعذر الاتصال بالخادم.');
+      setState(() => _error = _t('تعذر الاتصال بالخادم.', 'Could not reach the server.'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -953,7 +996,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             title: step == null
                 ? null
                 : Text(
-                    'تسجيل مركز تجميل',
+                    _t('تسجيل مركز تجميل', 'Beauty center signup'),
                     style: TextStyle(
                       color: tone.text,
                       fontSize: 17,
@@ -1010,12 +1053,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           tone: tone,
           size: 112,
           logoKey: const Key('register-logo'),
-          title: 'أنشئ حسابك',
-          subtitle: 'انضم إلى المزين واحجز في أفضل مراكز التجميل بسهولة.',
+          title: _t('أنشئ حسابك', 'Create your account'),
+          subtitle: _t('انضم إلى المزين واحجز في أفضل مراكز التجميل بسهولة.', 'Join Al-Muzayyin and book top beauty centers easily.'),
         ),
         const SizedBox(height: 24),
         Text(
-          'اختر نوع الحساب',
+          _t('اختر نوع الحساب', 'Choose account type'),
           style: TextStyle(
             color: tone.text,
             fontSize: 16,
@@ -1030,7 +1073,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 tone,
                 key: const Key('register-client'),
                 type: 'customer',
-                label: 'عميل',
+                label: _t('عميل', 'Customer'),
                 icon: Icons.person_outline,
               ),
             ),
@@ -1040,7 +1083,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 tone,
                 key: const Key('register-salon'),
                 type: 'salon',
-                label: 'مركز تجميل',
+                label: _t('مركز تجميل', 'Beauty center'),
                 icon: Icons.storefront_outlined,
               ),
             ),
@@ -1066,7 +1109,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _primaryButton(
                   tone,
                   key: const Key('register-submit'),
-                  label: _busy ? 'جارٍ إنشاء الحساب…' : 'إنشاء الحساب',
+                  label: _busy ? _t('جارٍ إنشاء الحساب…', 'Creating account…') : _t('إنشاء الحساب', 'Create account'),
                   onPressed: _submit,
                 ),
               ],
@@ -1093,7 +1136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'سجّل مركز التجميل في ${_SalonStep.values.length} خطوات بسيطة',
+            _t('سجّل مركز التجميل في ${_SalonStep.values.length} خطوات بسيطة', 'Register your beauty center in ${_SalonStep.values.length} simple steps'),
             style: TextStyle(
               color: tone.text,
               fontSize: 16,
@@ -1102,7 +1145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'جهّز بيانات الخدمات وفريق العمل ومواعيدك، ويمكنك تعديلها لاحقاً في أي وقت.',
+            _t('جهّز بيانات الخدمات وفريق العمل ومواعيدك، ويمكنك تعديلها لاحقاً في أي وقت.', 'Prepare services, team, and hours — you can edit them anytime later.'),
             style: TextStyle(color: tone.muted, fontSize: 12.5, height: 1.5),
           ),
           const SizedBox(height: 14),
@@ -1123,7 +1166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      '${step.index + 1}. ${step.title}',
+                      '${step.index + 1}. ${step.title(_english)}',
                       style: TextStyle(
                         color: tone.text,
                         fontWeight: FontWeight.w700,
@@ -1181,7 +1224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'الخطوة ${step.index + 1} من $total',
+                      _t('الخطوة ${step.index + 1} من $total', 'Step ${step.index + 1} of $total'),
                       key: const Key('register-step-label'),
                       style: TextStyle(
                         color: tone.accent,
@@ -1190,7 +1233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     Text(
-                      step.title,
+                      step.title(_english),
                       style: TextStyle(
                         color: tone.text,
                         fontSize: 18,
@@ -1198,7 +1241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     Text(
-                      step.hint,
+                      step.hint(_english),
                       style: TextStyle(color: tone.muted, fontSize: 12.5),
                     ),
                   ],
@@ -1239,9 +1282,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onChanged: (_) {
               if (_error != null) setState(() => _error = null);
             },
-            decoration: _field(tone, 'رقم البطاقة الشخصية').copyWith(
+            decoration: _field(tone, _t('رقم البطاقة الشخصية', 'National ID')).copyWith(
               counterText: '',
-              hintText: '١٤ رقماً',
+              hintText: _t('١٤ رقماً', '14 digits'),
               hintStyle: TextStyle(color: tone.muted),
               prefixIcon: Icon(
                 Icons.badge_outlined,
@@ -1287,8 +1330,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        'السابق',
+                      child: Text(_t('السابق', 'Back'),
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -1299,8 +1341,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       tone,
                       key: Key(last ? 'register-submit' : 'register-next'),
                       label: last
-                          ? (_busy ? 'جارٍ إنشاء الحساب…' : 'إنشاء الحساب')
-                          : (step == null ? 'ابدأ التسجيل' : 'التالي'),
+                          ? (_busy ? _t('جارٍ إنشاء الحساب…', 'Creating account…') : _t('إنشاء الحساب', 'Create account'))
+                          : (step == null ? _t('ابدأ التسجيل', 'Start signup') : _t('التالي', 'Next')),
                       icon: last ? Icons.check_rounded : Icons.arrow_forward,
                       onPressed: _next,
                     ),
@@ -1362,7 +1404,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         controller: _name,
         style: TextStyle(color: tone.text),
         cursorColor: tone.accent,
-        decoration: _field(tone, _type == 'salon' ? 'اسم مركز التجميل' : 'الاسم'),
+        decoration: _field(tone, _type == 'salon' ? _t('اسم مركز التجميل', 'Beauty center name') : _t('الاسم', 'Name')),
       ),
       const SizedBox(height: 14),
       TextField(
@@ -1372,7 +1414,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         textDirection: TextDirection.ltr,
         style: TextStyle(color: tone.text),
         cursorColor: tone.accent,
-        decoration: _field(tone, 'البريد'),
+        decoration: _field(tone, _t('البريد', 'Email')),
       ),
       const SizedBox(height: 14),
       TextField(
@@ -1381,7 +1423,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         keyboardType: TextInputType.phone,
         style: TextStyle(color: tone.text),
         cursorColor: tone.accent,
-        decoration: _field(tone, 'رقم الهاتف'),
+        decoration: _field(tone, _t('رقم الهاتف', 'Phone number')),
       ),
       const SizedBox(height: 14),
       OutlinedButton.icon(
@@ -1398,7 +1440,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         icon: Icon(Icons.map_outlined, color: tone.accent),
         label: Text(
-          _address?.address ?? 'اختر العنوان من الخريطة',
+          _address?.address ?? _t('اختر العنوان من الخريطة', 'Pick address on the map'),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1410,7 +1452,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         obscureText: _hidden,
         style: TextStyle(color: tone.text),
         cursorColor: tone.accent,
-        decoration: _field(tone, 'كلمة المرور').copyWith(
+        decoration: _field(tone, _t('كلمة المرور', 'Password')).copyWith(
           suffixIcon: IconButton(
             onPressed: () => setState(() => _hidden = !_hidden),
             icon: Icon(
@@ -1428,10 +1470,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _summary(SettingsTone tone) {
     final open = _hours.where((hour) => !hour.isClosed).length;
     final items = [
-      (Icons.workspace_premium_outlined, _plan?.name ?? 'بدون باقة'),
-      (Icons.content_cut_rounded, '${_services.length} خدمة'),
-      (Icons.groups_2_outlined, '${_team.length} أخصائي'),
-      (Icons.schedule_rounded, '$open أيام عمل'),
+      (
+        Icons.workspace_premium_outlined,
+        _plan?.nameFor(_english) ?? _t('بدون باقة', 'No plan'),
+      ),
+      (Icons.content_cut_rounded, _t('${_services.length} خدمة', '${_services.length} services')),
+      (Icons.groups_2_outlined, _t('${_team.length} أخصائي', '${_team.length} specialists')),
+      (Icons.schedule_rounded, _t('$open أيام عمل', '$open working days')),
     ];
     return Container(
       key: const Key('register-summary'),
@@ -1470,13 +1515,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final titles = <String>{};
     for (final category in _selectedCategories) {
       titles.addAll(switch (category.slug) {
-        'women' => const ['خبيرة تجميل', 'مصففة شعر', 'أخصائية بشرة'],
-        'kids' => const ['حلاق أطفال', 'مصفف شعر'],
-        _ => const ['حلاق', 'حلاق أول', 'خبير لحية'],
+        'women' => [_t('خبيرة تجميل', 'Beautician'), _t('مصففة شعر', 'Hair stylist'), _t('أخصائية بشرة', 'Skin specialist')],
+        'kids' => [_t('حلاق أطفال', 'Kids barber'), _t('مصفف شعر', 'Hair stylist')],
+        _ => [_t('حلاق', 'Barber'), _t('حلاق أول', 'Senior barber'), _t('خبير لحية', 'Beard specialist')],
       });
     }
     if (titles.isEmpty) {
-      return const ['حلاق', 'حلاق أول', 'خبير لحية'];
+      return [_t('حلاق', 'Barber'), _t('حلاق أول', 'Senior barber'), _t('خبير لحية', 'Beard specialist')];
     }
     return titles.toList();
   }
@@ -1530,7 +1575,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'الأخصائي ${index + 1}',
+                      _t('الأخصائي ${index + 1}', 'Specialist ${index + 1}'),
                       style: TextStyle(
                         color: tone.text,
                         fontWeight: FontWeight.w800,
@@ -1557,7 +1602,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onChanged: (_) {
                   if (_error != null) setState(() => _error = null);
                 },
-                decoration: _field(tone, 'اسم الأخصائي').copyWith(
+                decoration: _field(tone, _t('اسم الأخصائي', 'Specialist name')).copyWith(
                   prefixIcon: Icon(Icons.person_outline, color: tone.accent),
                 ),
               ),
@@ -1567,7 +1612,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: member.title,
                 style: TextStyle(color: tone.text),
                 cursorColor: tone.accent,
-                decoration: _field(tone, 'التخصص (اختياري)').copyWith(
+                decoration: _field(tone, _t('التخصص (اختياري)', 'Specialty (optional)')).copyWith(
                   prefixIcon: Icon(Icons.badge_outlined, color: tone.accent),
                 ),
               ),
@@ -1615,7 +1660,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         icon: const Icon(Icons.person_add_alt_1_outlined),
         label: Text(
-          full ? 'وصلت للحد الأقصى في باقتك ($limit)' : 'إضافة أخصائي آخر',
+          full ? _t('وصلت للحد الأقصى في باقتك ($limit)', 'You reached your plan limit ($limit)') : _t('إضافة أخصائي آخر', 'Add another specialist'),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
@@ -1652,7 +1697,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final open = _hours.where((hour) => !hour.isClosed).length;
     return [
       Text(
-        'فعّل اليوم ثم اضغط على وقت الفتح أو الإغلاق لتعديله.',
+        _t('فعّل اليوم ثم اضغط على وقت الفتح أو الإغلاق لتعديله.', 'Enable the day, then tap open or close time to edit it.'),
         style: TextStyle(color: tone.muted, fontSize: 13, height: 1.45),
       ),
       const SizedBox(height: 10),
@@ -1660,7 +1705,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         children: [
           Expanded(
             child: Text(
-              '$open أيام عمل في الأسبوع',
+              _t('$open أيام عمل في الأسبوع', '$open working days per week'),
               key: const Key('register-hours-count'),
               style: TextStyle(color: tone.muted, fontSize: 13),
             ),
@@ -1670,7 +1715,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onPressed: _copyFirstOpenDay,
             icon: Icon(Icons.copy_all_rounded, color: tone.accent, size: 18),
             label: Text(
-              'نفس الموعد لكل الأيام',
+              _t('نفس الموعد لكل الأيام', 'Same hours for all days'),
               style: TextStyle(color: tone.accent, fontWeight: FontWeight.w700),
             ),
           ),
@@ -1698,7 +1743,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      hour.label,
+                      _dayLabel(hour.day),
                       style: TextStyle(
                         color: hour.isClosed ? tone.muted : tone.text,
                         fontWeight: FontWeight.w800,
@@ -1707,7 +1752,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   Text(
-                    hour.isClosed ? 'مغلق' : 'مفتوح',
+                    hour.isClosed ? _t('مغلق', 'Closed') : _t('مفتوح', 'Open'),
                     style: TextStyle(
                       color: hour.isClosed ? tone.muted : tone.accent,
                       fontSize: 12.5,
@@ -1740,7 +1785,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: _timeField(
                         tone,
                         key: Key('register-hour-open-${hour.day}'),
-                        label: 'من',
+                        label: _t('من', 'From'),
                         value: hour.opensAt ?? '10:00',
                         onPicked: (value) => _setHour(
                           index,
@@ -1753,7 +1798,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: _timeField(
                         tone,
                         key: Key('register-hour-close-${hour.day}'),
-                        label: 'إلى',
+                        label: _t('إلى', 'To'),
                         value: hour.closesAt ?? '22:00',
                         onPicked: (value) => _setHour(
                           index,
@@ -1774,7 +1819,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final parts = value.split(':');
     final hour24 = int.tryParse(parts.first) ?? 0;
     final minute = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
-    final period = hour24 >= 12 ? 'م' : 'ص';
+    final period = hour24 >= 12
+        ? (_english ? 'PM' : 'م')
+        : (_english ? 'AM' : 'ص');
     final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
     return '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
   }
@@ -1790,14 +1837,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         hour: int.tryParse(parts.first) ?? 10,
         minute: int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0,
       ),
-      helpText: 'اختر الوقت',
-      cancelText: 'إلغاء',
-      confirmText: 'تم',
-      hourLabelText: 'ساعة',
-      minuteLabelText: 'دقيقة',
+      helpText: _t('اختر الوقت', 'Pick time'),
+      cancelText: _t('إلغاء', 'Cancel'),
+      confirmText: _t('تم', 'Done'),
+      hourLabelText: _t('ساعة', 'Hour'),
+      minuteLabelText: _t('دقيقة', 'Minute'),
       builder: (context, child) {
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: _english ? TextDirection.ltr : TextDirection.rtl,
           child: MediaQuery(
             data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
             child: Theme(
@@ -1867,7 +1914,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 2),
                     Text(
                       _formatHour12(value),
-                      textDirection: TextDirection.rtl,
+                      textDirection:
+                          _english ? TextDirection.ltr : TextDirection.rtl,
                       style: TextStyle(
                         color: tone.text,
                         fontWeight: FontWeight.w800,
@@ -1942,14 +1990,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               children: [
                 Text(
-                  'تعذر تحميل باقات الاشتراك.',
+                  _t('تعذر تحميل باقات الاشتراك.', 'Could not load subscription plans.'),
                   style: TextStyle(color: tone.muted),
                 ),
                 TextButton(
                   key: const Key('register-plans-retry'),
                   onPressed: () => setState(_loadPlans),
                   child: Text(
-                    'إعادة المحاولة',
+                    _t('إعادة المحاولة', 'Retry'),
                     style: TextStyle(color: tone.accent),
                   ),
                 ),
@@ -1961,7 +2009,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           return Padding(
             padding: const EdgeInsets.only(top: 40),
             child: Text(
-              'لا توجد باقات متاحة حالياً، اضغط التالي للمتابعة.',
+              _t('لا توجد باقات متاحة حالياً، اضغط التالي للمتابعة.', 'No plans available now — tap Next to continue.'),
               textAlign: TextAlign.center,
               style: TextStyle(color: tone.muted),
             ),
@@ -2009,14 +2057,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               children: [
                 Text(
-                  'تعذر تحميل الأقسام والخدمات.',
+                  _t('تعذر تحميل الأقسام والخدمات.', 'Could not load categories and services.'),
                   style: TextStyle(color: tone.muted),
                 ),
                 TextButton(
                   key: const Key('register-catalog-retry'),
                   onPressed: () => setState(_loadCatalog),
                   child: Text(
-                    'إعادة المحاولة',
+                    _t('إعادة المحاولة', 'Retry'),
                     style: TextStyle(color: tone.accent),
                   ),
                 ),
@@ -2033,10 +2081,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _heading(tone, '1', 'اختر أقسام مركز التجميل'),
+            _heading(tone, '1', _t('اختر أقسام مركز التجميل', 'Choose beauty center categories')),
             const SizedBox(height: 6),
             Text(
-              'يمكنك اختيار أكثر من قسم في نفس الوقت.',
+              _t('يمكنك اختيار أكثر من قسم في نفس الوقت.', 'You can select more than one category at once.'),
               style: TextStyle(color: tone.muted, fontSize: 12, height: 1.4),
             ),
             const SizedBox(height: 12),
@@ -2090,7 +2138,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Icon(icon, color: selected ? tone.ink : frame),
               const SizedBox(height: 6),
               Text(
-                category.name,
+                category.nameFor(_english),
                 style: TextStyle(
                   color: selected ? tone.ink : tone.text,
                   fontWeight: FontWeight.w700,
@@ -2115,7 +2163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 22),
         Row(
           children: [
-            Expanded(child: _heading(tone, '2', 'اختر الخدمات التي تقدمها')),
+            Expanded(child: _heading(tone, '2', _t('اختر الخدمات التي تقدمها', 'Choose the services you offer'))),
             TextButton(
               key: const Key('register-services-all'),
               onPressed: () => setState(() {
@@ -2129,7 +2177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _error = null;
               }),
               child: Text(
-                all ? 'إلغاء الكل' : 'تحديد الكل',
+                all ? _t('إلغاء الكل', 'Clear all') : _t('تحديد الكل', 'Select all'),
                 style: TextStyle(
                   color: tone.accent,
                   fontWeight: FontWeight.w700,
@@ -2139,7 +2187,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
         Text(
-          'تم اختيار ${_services.length} من $totalServices • كل إطار بلون قسمه، وحدد سعر كل خدمة.',
+          _t('تم اختيار ${_services.length} من $totalServices • كل إطار بلون قسمه، وحدد سعر كل خدمة.', 'Selected ${_services.length} of $totalServices • each frame matches its category; set every service price.'),
           key: const Key('register-services-count'),
           style: TextStyle(color: tone.muted, fontSize: 12, height: 1.5),
         ),
@@ -2159,7 +2207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  category.name,
+                  category.nameFor(_english),
                   style: TextStyle(
                     color: _frameFor(category.slug),
                     fontWeight: FontWeight.w700,
@@ -2173,7 +2221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                'لا توجد خدمات في هذا القسم بعد.',
+                _t('لا توجد خدمات في هذا القسم بعد.', 'No services in this category yet.'),
                 style: TextStyle(color: tone.muted),
               ),
             ),
@@ -2209,11 +2257,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         onChanged: (_) {
           if (_error != null) setState(() => _error = null);
         },
-        decoration: _field(tone, 'سعر الخدمة').copyWith(
+        decoration: _field(tone, _t('سعر الخدمة', 'Service price')).copyWith(
           isDense: true,
-          hintText: 'مثال: 150',
+          hintText: _t('مثال: 150', 'e.g. 150'),
           hintStyle: TextStyle(color: tone.muted),
-          suffixText: 'ج.م',
+          suffixText: _t('ج.م', 'EGP'),
           suffixStyle: TextStyle(color: tone.accent),
           prefixIcon: Icon(Icons.sell_outlined, color: tone.accent, size: 20),
         ),
@@ -2287,12 +2335,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                item.name,
+                item.nameFor(_english),
                 style: TextStyle(color: tone.text, fontWeight: FontWeight.w700),
               ),
-              if (item.description != null && item.description!.isNotEmpty)
+              if (item.descriptionFor(_english) != null)
                 Text(
-                  item.description!,
+                  item.descriptionFor(_english)!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: tone.muted, fontSize: 12),

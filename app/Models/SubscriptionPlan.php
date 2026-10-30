@@ -15,15 +15,26 @@ class SubscriptionPlan extends Model
         'year' => 'سنة',
     ];
 
+    public const UNITS_EN = [
+        'day' => 'day',
+        'month' => 'month',
+        'year' => 'year',
+    ];
+
     protected $fillable = [
         'name',
+        'name_en',
         'tagline',
+        'tagline_en',
         'badge',
+        'badge_en',
         'price',
         'duration_value',
         'duration_unit',
         'features',
+        'features_en',
         'terms',
+        'terms_en',
         'max_services',
         'max_specialists',
         'is_featured',
@@ -37,6 +48,7 @@ class SubscriptionPlan extends Model
             'price' => 'decimal:2',
             'duration_value' => 'integer',
             'features' => 'array',
+            'features_en' => 'array',
             'max_services' => 'integer',
             'max_specialists' => 'integer',
             'is_featured' => 'boolean',
@@ -60,9 +72,19 @@ class SubscriptionPlan extends Model
         return (float) $this->price <= 0;
     }
 
-    public function durationLabel(): string
+    public function durationLabel(bool $english = false): string
     {
         $value = max(1, (int) $this->duration_value);
+
+        if ($english) {
+            $unit = match ($this->duration_unit) {
+                'day' => $value === 1 ? 'day' : 'days',
+                'month' => $value === 1 ? 'month' : 'months',
+                default => $value === 1 ? 'year' : 'years',
+            };
+
+            return $value === 1 ? "1 $unit" : "$value $unit";
+        }
 
         return match ($this->duration_unit) {
             'day' => match (true) {
@@ -86,15 +108,16 @@ class SubscriptionPlan extends Model
         };
     }
 
-    public function priceLabel(): string
+    public function priceLabel(bool $english = false): string
     {
         if ($this->isFree()) {
-            return 'مجاناً';
+            return $english ? 'Free' : 'مجاناً';
         }
 
         $price = (float) $this->price;
+        $digits = floor($price) == $price ? number_format($price) : number_format($price, 2);
 
-        return (floor($price) == $price ? number_format($price) : number_format($price, 2)).' ج.م';
+        return $english ? "EGP $digits" : $digits.' ج.م';
     }
 
     public function endsFrom(CarbonInterface $start): CarbonInterface
@@ -110,19 +133,29 @@ class SubscriptionPlan extends Model
 
     public function toApiArray(): array
     {
+        $terms = array_values(array_filter(array_map('trim', preg_split('/\R/u', (string) $this->terms) ?: []), 'filled'));
+        $termsEn = array_values(array_filter(array_map('trim', preg_split('/\R/u', (string) $this->terms_en) ?: []), 'filled'));
+
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'name_en' => $this->name_en,
             'tagline' => $this->tagline,
+            'tagline_en' => $this->tagline_en,
             'badge' => $this->badge,
+            'badge_en' => $this->badge_en,
             'price' => (float) $this->price,
             'price_label' => $this->priceLabel(),
+            'price_label_en' => $this->priceLabel(true),
             'is_free' => $this->isFree(),
             'duration_value' => (int) $this->duration_value,
             'duration_unit' => $this->duration_unit,
             'duration_label' => $this->durationLabel(),
+            'duration_label_en' => $this->durationLabel(true),
             'features' => array_values(array_filter((array) $this->features, 'filled')),
-            'terms' => array_values(array_filter(array_map('trim', preg_split('/\R/u', (string) $this->terms) ?: []), 'filled')),
+            'features_en' => array_values(array_filter((array) $this->features_en, 'filled')),
+            'terms' => $terms,
+            'terms_en' => $termsEn !== [] ? $termsEn : $terms,
             'max_services' => $this->max_services,
             'max_specialists' => $this->max_specialists,
             'is_featured' => $this->is_featured,

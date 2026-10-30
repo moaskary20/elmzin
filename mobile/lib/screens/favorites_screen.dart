@@ -81,6 +81,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       final salon = saved[index];
                       return _SalonTile(
                         salon: salon,
+                        english: english,
                         onTap: () =>
                             widget.onOpenSalon(salon.id, salon.categorySlug),
                       );
@@ -97,9 +98,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 }
 
 class _SalonTile extends StatelessWidget {
-  const _SalonTile({required this.salon, required this.onTap});
+  const _SalonTile({
+    required this.salon,
+    required this.english,
+    required this.onTap,
+  });
 
   final HomeSalon salon;
+  final bool english;
   final VoidCallback onTap;
 
   @override
@@ -146,7 +152,7 @@ class _SalonTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      salon.place,
+                      salon.placeFor(english),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: AppColors.goldSoft, fontSize: 13),

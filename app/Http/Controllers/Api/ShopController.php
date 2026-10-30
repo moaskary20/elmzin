@@ -46,7 +46,7 @@ class ShopController extends Controller
     {
         $products = ShopProduct::query()
             ->where('is_active', true)
-            ->with('category:id,name,slug')
+            ->with('category:id,name,name_en,slug')
             ->when(
                 $request->filled('category_id'),
                 fn ($query) => $query->where('shop_category_id', (int) $request->integer('category_id')),
@@ -62,7 +62,7 @@ class ShopController extends Controller
     public function show(Request $request, ShopProduct $product): JsonResponse
     {
         abort_unless($product->is_active, 404);
-        $product->load('category:id,name,slug');
+        $product->load('category:id,name,name_en,slug');
 
         return response()->json([
             'data' => $this->productPayload($request, $product, $product->category),

@@ -36,11 +36,12 @@ class SalonManageScreen extends StatefulWidget {
   }
 
   static Future<MapAddress?> _pickPlace(BuildContext context, LatLng? start) {
+    final english = Directionality.of(context) == TextDirection.ltr;
     return Navigator.of(context).push<MapAddress>(
       MaterialPageRoute(
         builder: (_) => MapPickerScreen(
-          title: 'موقع الصالون',
-          confirmLabel: 'استخدام هذا الموقع',
+          title: english ? 'Salon location' : 'موقع الصالون',
+          confirmLabel: english ? 'Use this location' : 'استخدام هذا الموقع',
           initial: start,
         ),
       ),
@@ -109,7 +110,14 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
     } on SalonProfileException catch (error) {
       if (mounted) setState(() => _loadError = error.message);
     } catch (_) {
-      if (mounted) setState(() => _loadError = 'تعذر تحميل بيانات الصالون.');
+      if (mounted) {
+        setState(
+          () => _loadError = _t(
+            'تعذر تحميل بيانات الصالون.',
+            'Could not load salon details.',
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -753,7 +761,7 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
                 ),
               ),
               title: Text(
-                person.name,
+                person.nameFor(_english),
                 style: TextStyle(
                   color: person.isActive ? tone.text : tone.muted,
                   fontWeight: FontWeight.w700,
@@ -761,7 +769,8 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
               ),
               subtitle: Text(
                 [
-                  if ((person.title ?? '').isNotEmpty) person.title!,
+                  if (person.titleFor(_english).isNotEmpty)
+                    person.titleFor(_english),
                   if (!person.isActive) _t('متوقف', 'Paused'),
                 ].join(' • '),
                 style: TextStyle(color: tone.muted, fontSize: 12),
@@ -1511,19 +1520,25 @@ class _ServiceSheetState extends State<_ServiceSheet> {
 class _SpecialistDraft {
   const _SpecialistDraft({
     this.name = '',
+    this.nameEn = '',
     this.title = '',
+    this.titleEn = '',
     this.phone = '',
     this.delete = false,
   });
 
   final String name;
+  final String nameEn;
   final String title;
+  final String titleEn;
   final String phone;
   final bool delete;
 
   Map<String, Object?> toJson() => {
     'name': name,
-    'title': title,
+    'name_en': nameEn.isEmpty ? null : nameEn,
+    'title': title.isEmpty ? null : title,
+    'title_en': titleEn.isEmpty ? null : titleEn,
     'phone': phone,
   };
 }
@@ -1545,7 +1560,9 @@ class _SpecialistSheet extends StatefulWidget {
 
 class _SpecialistSheetState extends State<_SpecialistSheet> {
   late final _name = TextEditingController(text: widget.person?.name ?? '');
+  late final _nameEn = TextEditingController(text: widget.person?.nameEn ?? '');
   late final _title = TextEditingController(text: widget.person?.title ?? '');
+  late final _titleEn = TextEditingController(text: widget.person?.titleEn ?? '');
   late final _phone = TextEditingController(text: widget.person?.phone ?? '');
   String? _error;
 
@@ -1554,7 +1571,9 @@ class _SpecialistSheetState extends State<_SpecialistSheet> {
   @override
   void dispose() {
     _name.dispose();
+    _nameEn.dispose();
     _title.dispose();
+    _titleEn.dispose();
     _phone.dispose();
     super.dispose();
   }
@@ -1597,14 +1616,28 @@ class _SpecialistSheetState extends State<_SpecialistSheet> {
               tone,
               key: const Key('manage-specialist-name'),
               controller: _name,
-              label: _t('الاسم', 'Name'),
+              label: _t('الاسم (عربي)', 'Name (Arabic)'),
+            ),
+            const SizedBox(height: 12),
+            _input(
+              tone,
+              key: const Key('manage-specialist-name-en'),
+              controller: _nameEn,
+              label: _t('الاسم (English)', 'Name (English)'),
             ),
             const SizedBox(height: 12),
             _input(
               tone,
               key: const Key('manage-specialist-title'),
               controller: _title,
-              label: _t('التخصص (حلاق، خبيرة مكياج...)', 'Title'),
+              label: _t('التخصص عربي (حلاق، خبيرة مكياج...)', 'Title (Arabic)'),
+            ),
+            const SizedBox(height: 12),
+            _input(
+              tone,
+              key: const Key('manage-specialist-title-en'),
+              controller: _titleEn,
+              label: _t('التخصص (English)', 'Title (English)'),
             ),
             const SizedBox(height: 12),
             _input(
@@ -1632,7 +1665,9 @@ class _SpecialistSheetState extends State<_SpecialistSheet> {
                   context,
                   _SpecialistDraft(
                     name: _name.text.trim(),
+                    nameEn: _nameEn.text.trim(),
                     title: _title.text.trim(),
+                    titleEn: _titleEn.text.trim(),
                     phone: _phone.text.trim(),
                   ),
                 );

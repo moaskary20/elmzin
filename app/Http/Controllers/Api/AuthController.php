@@ -185,6 +185,7 @@ class AuthController extends Controller
                     'category_id' => $categoryIds[0],
                     'user_id' => $user->id,
                     'name' => $user->name,
+                    'name_en' => $data['name_en'] ?? null,
                     'phone' => $user->phone,
                     'national_id' => $data['national_id'] ?? null,
                     'city' => $user->city ?: 'غير محدد',
@@ -192,6 +193,7 @@ class AuthController extends Controller
                     'latitude' => $user->latitude,
                     'longitude' => $user->longitude,
                     'about' => 'طلب انضمام من تطبيق الموبايل.',
+                    'about_en' => 'Join request from the mobile app.',
                     'verification_status' => VerificationStatus::Pending,
                     'is_active' => true,
                 ]);
@@ -211,7 +213,9 @@ class AuthController extends Controller
                     $services[] = $salon->services()->create([
                         'catalog_service_id' => $item->id,
                         'name' => $item->name,
+                        'name_en' => $item->name_en,
                         'description' => $item->description,
+                        'description_en' => $item->description_en,
                         'price' => $prices[$item->id],
                         'duration_minutes' => $item->duration_minutes,
                         'is_active' => true,

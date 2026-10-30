@@ -217,8 +217,11 @@ class _SearchScreenState extends State<SearchScreen> {
       if (text.isNotEmpty) {
         final haystack = [
           salon.nameFor(_english),
+          salon.name,
+          salon.placeFor(_english),
           salon.city,
           salon.district,
+          ...salon.servicesFor(_english),
           ...salon.services,
         ].join(' ').toLowerCase();
         if (!haystack.contains(text)) return false;
@@ -1011,7 +1014,7 @@ class _ResultCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              salon.nameFor(_english),
+                              salon.nameFor(english),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1033,7 +1036,7 @@ class _ResultCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        salon.place,
+                        salon.placeFor(english),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
