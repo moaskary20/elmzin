@@ -336,6 +336,9 @@ class _NoticeCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             localized(item.title, item.titleEn, english),
+                            textDirection: english
+                                ? TextDirection.ltr
+                                : TextDirection.rtl,
                             style: TextStyle(
                               color: AppColors.gold,
                               fontSize: 15,
@@ -369,6 +372,9 @@ class _NoticeCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       localized(item.body, item.bodyEn, english),
+                      textDirection: english
+                          ? TextDirection.ltr
+                          : TextDirection.rtl,
                       style: TextStyle(
                         color: AppColors.goldSoft,
                         fontSize: 13,

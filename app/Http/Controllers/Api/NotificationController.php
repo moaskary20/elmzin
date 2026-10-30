@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AppNotification;
 use App\Models\User;
+use App\Services\NotificationLocalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function __construct(private NotificationLocalizer $localizer) {}
+
     public function index(Request $request): JsonResponse
     {
         $user = $this->account($request);
@@ -60,13 +63,15 @@ class NotificationController extends Controller
 
     private function present(AppNotification $item): array
     {
+        $english = $this->localizer->english($item);
+
         return [
             'id' => $item->id,
             'type' => $item->type,
             'title' => $item->title,
-            'title_en' => $item->title_en,
+            'title_en' => $english['title_en'],
             'body' => $item->body,
-            'body_en' => $item->body_en,
+            'body_en' => $english['body_en'],
             'data' => $item->data ?? (object) [],
             'read' => $item->read_at !== null,
             'created_at' => $item->created_at?->toIso8601String(),
