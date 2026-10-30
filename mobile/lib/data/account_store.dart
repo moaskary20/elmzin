@@ -64,8 +64,17 @@ class AccountStore extends ChangeNotifier {
       token = prefs.getString(_tokenKey);
       photoPath = prefs.getString(_photoKey);
       photoUrl = prefs.getString(_photoUrlKey);
-      locale = normalizeLocale(prefs.getString(_localeKey));
-      localeChosen = prefs.getBool(_localeChosenKey) ?? false;
+      final diskLocale = normalizeLocale(prefs.getString(_localeKey));
+      final diskChosen = prefs.getBool(_localeChosenKey) ?? false;
+      // Keep a locale the user just picked if SharedPreferences is still stale
+      // (common on Android when AppShell reloads right after LanguageScreen).
+      if (localeChosen && (!diskChosen || diskLocale != locale)) {
+        await prefs.setString(_localeKey, locale);
+        await prefs.setBool(_localeChosenKey, true);
+      } else {
+        locale = diskLocale;
+        localeChosen = diskChosen;
+      }
       loggedIn = prefs.getBool(_loggedInKey) ?? false;
       notifications = prefs.getBool(_notificationsKey) ?? true;
       darkMode = prefs.getBool(_darkModeKey) ?? true;
@@ -192,12 +201,12 @@ class AccountStore extends ChangeNotifier {
     _pushSettings();
   }
 
-  void setLocale(String code) {
+  Future<void> setLocale(String code) async {
     final next = normalizeLocale(code);
     locale = next;
     localeChosen = true;
     notifyListeners();
-    _save();
+    await _save();
     _pushSettings();
   }
 

@@ -54,10 +54,26 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
-    _locale = widget.locale;
+    _locale = Locale(AccountStore.normalizeLocale(widget.locale.languageCode));
     AccountStore.instance.addListener(_onAccount);
-    AccountStore.instance.load();
+    // Prefer the locale passed from LanguageScreen / splash; only hydrate
+    // account fields without letting a stale prefs read wipe English.
+    AccountStore.instance.load().then((_) {
+      if (!mounted) return;
+      final code = AccountStore.normalizeLocale(AccountStore.instance.locale);
+      if (code != _locale.languageCode) {
+        setState(() => _locale = Locale(code));
+      }
+    });
     NotificationsStore.instance.attach();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.locale.languageCode != widget.locale.languageCode) {
+      _locale = Locale(AccountStore.normalizeLocale(widget.locale.languageCode));
+    }
   }
 
   @override

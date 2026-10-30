@@ -91,7 +91,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
     if (picked == null) return;
-    AccountStore.instance.setLocale(picked);
+    await AccountStore.instance.setLocale(picked);
+    if (!mounted) return;
     widget.onLocale(Locale(picked));
   }
 

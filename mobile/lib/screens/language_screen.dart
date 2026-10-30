@@ -33,15 +33,16 @@ class _LanguageScreenState extends State<LanguageScreen>
     super.dispose();
   }
 
-  void _select(String code) {
+  Future<void> _select(String code) async {
     final localeCode = AccountStore.normalizeLocale(code);
     setState(() => _selected = localeCode);
-    AccountStore.instance.setLocale(localeCode);
-    final locale = Locale(localeCode);
+    // Wait until prefs are written so AppShell.load() cannot restore Arabic.
+    await AccountStore.instance.setLocale(localeCode);
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, _, _) => AppShell(locale: locale),
+        pageBuilder: (_, _, _) => AppShell(locale: Locale(localeCode)),
         transitionsBuilder: (_, animation, _, child) {
           return FadeTransition(opacity: animation, child: child);
         },
