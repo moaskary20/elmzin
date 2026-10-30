@@ -55,6 +55,23 @@ class SalonProfileController extends Controller
 
         $salon->update($data);
 
+        $owner = $salon->user;
+        if ($owner) {
+            $sync = [];
+            if (array_key_exists('name', $data)) {
+                $sync['name'] = $data['name'];
+            }
+            if (array_key_exists('name_en', $data)) {
+                $sync['name_en'] = filled($data['name_en'] ?? null) ? $data['name_en'] : null;
+            }
+            if (array_key_exists('phone', $data)) {
+                $sync['phone'] = $data['phone'];
+            }
+            if ($sync !== []) {
+                $owner->forceFill($sync)->saveQuietly();
+            }
+        }
+
         return $this->respond($request, $salon);
     }
 
@@ -67,6 +84,7 @@ class SalonProfileController extends Controller
             'price' => ['required', 'numeric', 'min:1', 'max:100000'],
             'duration_minutes' => ['nullable', 'integer', 'min:5', 'max:600'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'description_en' => ['nullable', 'string', 'max:1000'],
         ], [
             'catalog_service_id.required' => 'اختر الخدمة.',
             'price.required' => 'حدد سعر الخدمة.',

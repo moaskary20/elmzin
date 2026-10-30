@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Categories\RelationManagers;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -30,7 +31,7 @@ class CatalogServicesRelationManager extends RelationManager
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('اسم الخدمة')
+                ->label('اسم الخدمة (عربي)')
                 ->required()
                 ->maxLength(255)
                 ->unique(
@@ -38,6 +39,17 @@ class CatalogServicesRelationManager extends RelationManager
                     modifyRuleUsing: fn (Unique $rule): Unique => $rule->where('category_id', $this->getOwnerRecord()->getKey()),
                 )
                 ->validationMessages(['unique' => 'هذه الخدمة موجودة بالفعل في هذا القسم.']),
+            TextInput::make('name_en')
+                ->label('اسم الخدمة (English)')
+                ->maxLength(255),
+            Textarea::make('description')
+                ->label('الوصف (عربي)')
+                ->rows(2)
+                ->columnSpanFull(),
+            Textarea::make('description_en')
+                ->label('الوصف (English)')
+                ->rows(2)
+                ->columnSpanFull(),
             Toggle::make('is_active')
                 ->label('متاحة للصالونات')
                 ->default(true),
@@ -51,7 +63,8 @@ class CatalogServicesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('name')
                     ->label('الخدمة')
-                    ->searchable(),
+                    ->description(fn ($record): ?string => $record->name_en)
+                    ->searchable(['name', 'name_en']),
                 TextColumn::make('services_count')
                     ->label('عدد الصالونات')
                     ->counts('services'),

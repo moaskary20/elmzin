@@ -71,6 +71,7 @@ class AuthApi {
   static Future<AuthSession> Function({
     required String accountType,
     required String name,
+    String? nameEn,
     required String email,
     required String phone,
     required String password,
@@ -136,6 +137,7 @@ class AuthApi {
   static Future<AuthSession> _register({
     required String accountType,
     required String name,
+    String? nameEn,
     required String email,
     required String phone,
     required String password,
@@ -173,6 +175,7 @@ class AuthApi {
       if (planId != null) 'accept_terms': acceptTerms,
       'account_type': accountType,
       'name': name,
+      if (nameEn != null && nameEn.isNotEmpty) 'name_en': nameEn,
       'email': email,
       'phone': phone,
       'password': password,

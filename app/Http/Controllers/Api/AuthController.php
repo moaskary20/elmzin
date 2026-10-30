@@ -30,6 +30,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'account_type' => ['required', Rule::in(['customer', 'salon'])],
             'name' => ['required', 'string', 'max:120'],
+            'name_en' => ['sometimes', 'nullable', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:30', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:6', 'max:100'],
@@ -68,7 +69,9 @@ class AuthController extends Controller
             'accept_terms' => ['exclude_without:plan_id', 'required', 'accepted'],
             'specialists' => ['sometimes', 'array', 'max:50'],
             'specialists.*.name' => ['required', 'string', 'max:120'],
+            'specialists.*.name_en' => ['nullable', 'string', 'max:120'],
             'specialists.*.title' => ['nullable', 'string', 'max:120'],
+            'specialists.*.title_en' => ['nullable', 'string', 'max:120'],
             'specialists.*.phone' => ['nullable', 'string', 'max:30'],
             'hours' => ['sometimes', 'array', 'size:7'],
             'hours.*.day' => ['required', 'integer', 'between:0,6', 'distinct'],
@@ -164,8 +167,11 @@ class AuthController extends Controller
         }
 
         $user = DB::transaction(function () use ($data, $role, $request, $catalog, $prices, $plan, $categoryIds): User {
+            $nameEn = filled($data['name_en'] ?? null) ? trim((string) $data['name_en']) : null;
+
             $user = User::query()->create([
                 'name' => $data['name'],
+                'name_en' => $nameEn,
                 'email' => $data['email'],
                 'phone' => $data['phone'],
                 'password' => $data['password'],
@@ -185,7 +191,7 @@ class AuthController extends Controller
                     'category_id' => $categoryIds[0],
                     'user_id' => $user->id,
                     'name' => $user->name,
-                    'name_en' => $data['name_en'] ?? null,
+                    'name_en' => $nameEn,
                     'phone' => $user->phone,
                     'national_id' => $data['national_id'] ?? null,
                     'city' => $user->city ?: 'غير محدد',
@@ -225,7 +231,9 @@ class AuthController extends Controller
                 foreach ($data['specialists'] ?? [] as $person) {
                     $salon->specialists()->create([
                         'name' => trim($person['name']),
+                        'name_en' => filled($person['name_en'] ?? null) ? trim($person['name_en']) : null,
                         'title' => filled($person['title'] ?? null) ? trim($person['title']) : null,
+                        'title_en' => filled($person['title_en'] ?? null) ? trim($person['title_en']) : null,
                         'phone' => filled($person['phone'] ?? null) ? trim($person['phone']) : null,
                         'is_active' => true,
                     ])->services()->sync($services);

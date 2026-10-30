@@ -74,11 +74,15 @@ enum _SalonStep {
 
 class _TeamMember {
   final name = TextEditingController();
+  final nameEn = TextEditingController();
   final title = TextEditingController();
+  final titleEn = TextEditingController();
 
   void dispose() {
     name.dispose();
+    nameEn.dispose();
     title.dispose();
+    titleEn.dispose();
   }
 }
 
@@ -127,6 +131,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _name = TextEditingController();
+  final _nameEn = TextEditingController();
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
@@ -707,6 +712,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _nameEn.dispose();
     _email.dispose();
     _phone.dispose();
     _password.dispose();
@@ -887,6 +893,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final session = await AuthApi.register(
         accountType: _type!,
         name: _name.text.trim(),
+        nameEn: _nameEn.text.trim().isEmpty ? null : _nameEn.text.trim(),
         email: _email.text.trim(),
         phone: _phone.text.trim(),
         password: _password.text,
@@ -908,9 +915,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 for (final member in _team)
                   {
                     'name': member.name.text.trim(),
+                    'name_en': member.nameEn.text.trim().isEmpty
+                        ? null
+                        : member.nameEn.text.trim(),
                     'title': member.title.text.trim().isEmpty
                         ? null
                         : member.title.text.trim(),
+                    'title_en': member.titleEn.text.trim().isEmpty
+                        ? null
+                        : member.titleEn.text.trim(),
                   },
               ]
             : null,
@@ -1398,13 +1411,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   );
 
   List<Widget> _accountFields(SettingsTone tone) {
+    final salon = _type == 'salon';
     return [
       TextField(
         key: const Key('register-name'),
         controller: _name,
         style: TextStyle(color: tone.text),
         cursorColor: tone.accent,
-        decoration: _field(tone, _type == 'salon' ? _t('اسم مركز التجميل', 'Beauty center name') : _t('الاسم', 'Name')),
+        decoration: _field(
+          tone,
+          salon
+              ? _t('اسم مركز التجميل (عربي)', 'Beauty center name (Arabic)')
+              : _t('الاسم (عربي)', 'Name (Arabic)'),
+        ),
+      ),
+      const SizedBox(height: 14),
+      TextField(
+        key: const Key('register-name-en'),
+        controller: _nameEn,
+        style: TextStyle(color: tone.text),
+        cursorColor: tone.accent,
+        decoration: _field(
+          tone,
+          salon
+              ? _t('اسم مركز التجميل (English)', 'Beauty center name (English)')
+              : _t('الاسم (English)', 'Name (English)'),
+        ),
       ),
       const SizedBox(height: 14),
       TextField(
@@ -1511,17 +1543,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  List<String> get _titleSuggestions {
-    final titles = <String>{};
+  List<(String ar, String en)> get _titleSuggestions {
+    final titles = <(String, String)>{};
     for (final category in _selectedCategories) {
       titles.addAll(switch (category.slug) {
-        'women' => [_t('خبيرة تجميل', 'Beautician'), _t('مصففة شعر', 'Hair stylist'), _t('أخصائية بشرة', 'Skin specialist')],
-        'kids' => [_t('حلاق أطفال', 'Kids barber'), _t('مصفف شعر', 'Hair stylist')],
-        _ => [_t('حلاق', 'Barber'), _t('حلاق أول', 'Senior barber'), _t('خبير لحية', 'Beard specialist')],
+        'women' => const [
+          ('خبيرة تجميل', 'Beautician'),
+          ('مصففة شعر', 'Hair stylist'),
+          ('أخصائية بشرة', 'Skin specialist'),
+        ],
+        'kids' => const [
+          ('حلاق أطفال', 'Kids barber'),
+          ('مصفف شعر', 'Hair stylist'),
+        ],
+        _ => const [
+          ('حلاق', 'Barber'),
+          ('حلاق أول', 'Senior barber'),
+          ('خبير لحية', 'Beard specialist'),
+        ],
       });
     }
     if (titles.isEmpty) {
-      return [_t('حلاق', 'Barber'), _t('حلاق أول', 'Senior barber'), _t('خبير لحية', 'Beard specialist')];
+      return const [
+        ('حلاق', 'Barber'),
+        ('حلاق أول', 'Senior barber'),
+        ('خبير لحية', 'Beard specialist'),
+      ];
     }
     return titles.toList();
   }
@@ -1602,7 +1649,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onChanged: (_) {
                   if (_error != null) setState(() => _error = null);
                 },
-                decoration: _field(tone, _t('اسم الأخصائي', 'Specialist name')).copyWith(
+                decoration: _field(
+                  tone,
+                  _t('اسم الأخصائي (عربي)', 'Specialist name (Arabic)'),
+                ).copyWith(
+                  prefixIcon: Icon(Icons.person_outline, color: tone.accent),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: Key('register-specialist-name-en-$index'),
+                controller: member.nameEn,
+                style: TextStyle(color: tone.text),
+                cursorColor: tone.accent,
+                decoration: _field(
+                  tone,
+                  _t('اسم الأخصائي (English)', 'Specialist name (English)'),
+                ).copyWith(
                   prefixIcon: Icon(Icons.person_outline, color: tone.accent),
                 ),
               ),
@@ -1612,7 +1675,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: member.title,
                 style: TextStyle(color: tone.text),
                 cursorColor: tone.accent,
-                decoration: _field(tone, _t('التخصص (اختياري)', 'Specialty (optional)')).copyWith(
+                decoration: _field(
+                  tone,
+                  _t('التخصص عربي (اختياري)', 'Specialty (Arabic, optional)'),
+                ).copyWith(
+                  prefixIcon: Icon(Icons.badge_outlined, color: tone.accent),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: Key('register-specialist-title-en-$index'),
+                controller: member.titleEn,
+                style: TextStyle(color: tone.text),
+                cursorColor: tone.accent,
+                decoration: _field(
+                  tone,
+                  _t('التخصص (English, optional)', 'Specialty (English, optional)'),
+                ).copyWith(
                   prefixIcon: Icon(Icons.badge_outlined, color: tone.accent),
                 ),
               ),
@@ -1621,21 +1700,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 spacing: 8,
                 runSpacing: 6,
                 children: [
-                  for (final title in _titleSuggestions)
+                  for (final (ar, en) in _titleSuggestions)
                     ActionChip(
-                      label: Text(title),
-                      onPressed: () =>
-                          setState(() => member.title.text = title),
-                      backgroundColor: member.title.text == title
+                      label: Text(_english ? en : ar),
+                      onPressed: () => setState(() {
+                        member.title.text = ar;
+                        member.titleEn.text = en;
+                      }),
+                      backgroundColor: member.title.text == ar
                           ? tone.accent
                           : tone.background,
                       side: BorderSide(
-                        color: member.title.text == title
+                        color: member.title.text == ar
                             ? tone.accent
                             : tone.line,
                       ),
                       labelStyle: TextStyle(
-                        color: member.title.text == title
+                        color: member.title.text == ar
                             ? tone.ink
                             : tone.muted,
                         fontSize: 12,

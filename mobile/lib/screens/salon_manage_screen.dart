@@ -54,8 +54,10 @@ class SalonManageScreen extends StatefulWidget {
 
 class _SalonManageScreenState extends State<SalonManageScreen> {
   final _name = TextEditingController();
+  final _nameEn = TextEditingController();
   final _phone = TextEditingController();
   final _about = TextEditingController();
+  final _aboutEn = TextEditingController();
   final _city = TextEditingController();
   final _cityEn = TextEditingController();
   final _district = TextEditingController();
@@ -73,7 +75,7 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
 
   SettingsTone get _tone => SettingsTone.of(AccountStore.instance.darkMode);
 
-  bool get _english => Directionality.of(context) == TextDirection.ltr;
+  bool get _english => AccountStore.instance.isEnglish;
 
   String _t(String ar, String en) => _english ? en : ar;
 
@@ -92,8 +94,10 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
   void dispose() {
     for (final controller in [
       _name,
+      _nameEn,
       _phone,
       _about,
+      _aboutEn,
       _city,
       _cityEn,
       _district,
@@ -136,8 +140,10 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
       if (hours) _hours = salon.hours;
       if (details) {
         _name.text = salon.name;
+        _nameEn.text = salon.nameEn ?? '';
         _phone.text = salon.phone ?? '';
         _about.text = salon.about ?? '';
+        _aboutEn.text = salon.aboutEn ?? '';
         _city.text = salon.city ?? '';
         _cityEn.text = salon.cityEn ?? '';
         _district.text = salon.district ?? '';
@@ -204,8 +210,10 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
     await _run(
       () => SalonProfileApi.update({
         'name': _name.text.trim(),
+        'name_en': _nameEn.text.trim().isEmpty ? null : _nameEn.text.trim(),
         'phone': _phone.text.trim(),
         'about': _about.text.trim(),
+        'about_en': _aboutEn.text.trim().isEmpty ? null : _aboutEn.text.trim(),
         'city': _city.text.trim(),
         'city_en': _cityEn.text.trim().isEmpty ? null : _cityEn.text.trim(),
         'district': _district.text.trim(),
@@ -558,7 +566,16 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
         ),
         const SizedBox(height: 18),
         _section(_t('بيانات الصالون', 'Salon details')),
-        _field(const Key('manage-name'), _name, _t('اسم الصالون', 'Name')),
+        _field(
+          const Key('manage-name'),
+          _name,
+          _t('اسم الصالون (عربي)', 'Salon name (Arabic)'),
+        ),
+        _field(
+          const Key('manage-name-en'),
+          _nameEn,
+          _t('اسم الصالون (English)', 'Salon name (English)'),
+        ),
         _field(
           const Key('manage-phone'),
           _phone,
@@ -568,7 +585,13 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
         _field(
           const Key('manage-about'),
           _about,
-          _t('نبذة عن الصالون', 'About'),
+          _t('نبذة عن الصالون (عربي)', 'About (Arabic)'),
+          lines: 3,
+        ),
+        _field(
+          const Key('manage-about-en'),
+          _aboutEn,
+          _t('نبذة عن الصالون (English)', 'About (English)'),
           lines: 3,
         ),
         const SizedBox(height: 6),
@@ -1046,6 +1069,7 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
         'price': result.price,
         'duration_minutes': result.durationMinutes,
         'description': result.description,
+        'description_en': result.descriptionEn,
         'is_active': result.isActive,
         'specialist_ids': result.specialistIds,
       }),
@@ -1248,6 +1272,7 @@ class _ServiceDraft {
     this.price = 0,
     this.durationMinutes,
     this.description,
+    this.descriptionEn,
     this.isActive = true,
     this.specialistIds = const [],
     this.delete = false,
@@ -1257,6 +1282,7 @@ class _ServiceDraft {
   final double price;
   final int? durationMinutes;
   final String? description;
+  final String? descriptionEn;
   final bool isActive;
   final List<int> specialistIds;
   final bool delete;
@@ -1291,6 +1317,9 @@ class _ServiceSheetState extends State<_ServiceSheet> {
   late final _description = TextEditingController(
     text: widget.service?.description ?? '',
   );
+  late final _descriptionEn = TextEditingController(
+    text: widget.service?.descriptionEn ?? '',
+  );
   late var _active = widget.service?.isActive ?? true;
   late final _team = {...?widget.service?.specialistIds};
   int? _catalogId;
@@ -1307,6 +1336,7 @@ class _ServiceSheetState extends State<_ServiceSheet> {
     _price.dispose();
     _duration.dispose();
     _description.dispose();
+    _descriptionEn.dispose();
     super.dispose();
   }
 
@@ -1337,7 +1367,12 @@ class _ServiceSheetState extends State<_ServiceSheet> {
         catalogId: _catalogId,
         price: price,
         durationMinutes: duration ?? widget.service?.durationMinutes,
-        description: _description.text.trim(),
+        description: _description.text.trim().isEmpty
+            ? null
+            : _description.text.trim(),
+        descriptionEn: _descriptionEn.text.trim().isEmpty
+            ? null
+            : _descriptionEn.text.trim(),
         isActive: _active,
         specialistIds: _team.toList(),
       ),
@@ -1446,7 +1481,15 @@ class _ServiceSheetState extends State<_ServiceSheet> {
                 tone,
                 key: const Key('manage-service-description'),
                 controller: _description,
-                label: _t('وصف الخدمة', 'Description'),
+                label: _t('وصف الخدمة (عربي)', 'Description (Arabic)'),
+                lines: 2,
+              ),
+              const SizedBox(height: 12),
+              _input(
+                tone,
+                key: const Key('manage-service-description-en'),
+                controller: _descriptionEn,
+                label: _t('وصف الخدمة (English)', 'Description (English)'),
                 lines: 2,
               ),
               if (widget.specialists.isNotEmpty) ...[
