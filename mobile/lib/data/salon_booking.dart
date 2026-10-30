@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:muzayen/data/localized.dart';
 
 import 'account_store.dart';
 import 'home_slide.dart';
@@ -15,6 +16,7 @@ class SalonBooking {
     required this.customerPhone,
     required this.serviceName,
     required this.total,
+    this.serviceNameEn,
     this.subtotal = 0,
     this.discount = 0,
     this.pointsRedeemed = 0,
@@ -24,6 +26,7 @@ class SalonBooking {
     this.canCancel = false,
     this.cancelLocked = false,
     this.cancelLockMessage,
+    this.cancelLockMessageEn,
     this.notes,
     this.createdAt,
     this.customerEmail,
@@ -34,7 +37,9 @@ class SalonBooking {
     this.visits = 0,
     this.durationMinutes = 0,
     this.specialistName = '',
+    this.specialistNameEn,
     this.specialistTitle = '',
+    this.specialistTitleEn,
   });
 
   final int id;
@@ -44,6 +49,7 @@ class SalonBooking {
   final String customerName;
   final String customerPhone;
   final String serviceName;
+  final String? serviceNameEn;
   final double total;
   final double subtotal;
   final double discount;
@@ -54,6 +60,7 @@ class SalonBooking {
   final bool canCancel;
   final bool cancelLocked;
   final String? cancelLockMessage;
+  final String? cancelLockMessageEn;
   final String? notes;
   final DateTime? createdAt;
   final String? customerEmail;
@@ -64,7 +71,24 @@ class SalonBooking {
   final int visits;
   final int durationMinutes;
   final String specialistName;
+  final String? specialistNameEn;
   final String specialistTitle;
+  final String? specialistTitleEn;
+
+  String serviceNameFor(bool english) =>
+      localized(serviceName, serviceNameEn, english);
+
+  String specialistNameFor(bool english) =>
+      localized(specialistName, specialistNameEn, english);
+
+  String specialistTitleFor(bool english) =>
+      localized(specialistTitle, specialistTitleEn, english);
+
+  String cancelLockMessageFor(bool english) => localized(
+        cancelLockMessage ?? '',
+        cancelLockMessageEn,
+        english,
+      );
 
   DateTime? get at {
     final day = DateTime.tryParse(date);
@@ -112,6 +136,7 @@ class SalonBooking {
       canCancel: row['can_cancel'] == true,
       cancelLocked: row['cancel_locked'] == true,
       cancelLockMessage: text(row['cancel_lock_message']),
+      cancelLockMessageEn: text(row['cancel_lock_message_en']),
       notes: text(row['notes']),
       createdAt: DateTime.tryParse('${row['created_at'] ?? ''}')?.toLocal(),
       customerName: '${customer['name'] ?? ''}',
@@ -123,9 +148,12 @@ class SalonBooking {
       registered: customer['registered'] == true,
       visits: whole(customer['visits']),
       serviceName: '${service['name'] ?? ''}',
+      serviceNameEn: text(service['name_en']),
       durationMinutes: whole(service['duration_minutes']),
       specialistName: '${specialist['name'] ?? ''}',
+      specialistNameEn: text(specialist['name_en']),
       specialistTitle: '${specialist['title'] ?? ''}',
+      specialistTitleEn: text(specialist['title_en']),
     );
   }
 }

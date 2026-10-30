@@ -45,6 +45,17 @@ class BookingSetting extends Model
         return "لا يمكن إلغاء الطلب قبل الموعد بأقل من {$hours} ساعة حسب إعدادات الإدارة.";
     }
 
+    public function lockMessageEn(): string
+    {
+        $hours = $this->hours();
+
+        if ($hours <= 0) {
+            return 'Cancellation is currently blocked by admin settings.';
+        }
+
+        return "Cancellation is not allowed less than {$hours} hour(s) before the appointment.";
+    }
+
     public function salonCancelBlocked(Booking $booking, ?Carbon $at = null): bool
     {
         if (! $this->salon_cancel_lock_enabled) {

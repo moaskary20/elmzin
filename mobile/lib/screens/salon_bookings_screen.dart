@@ -23,7 +23,7 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
   String? _error;
   final Set<int> _busy = {};
 
-  bool get _english => Directionality.of(context) == TextDirection.ltr;
+  bool get _english => AccountStore.instance.isEnglish;
 
   String _t(String ar, String en) => _english ? en : ar;
 
@@ -54,7 +54,10 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
         _loading = false;
         _error = error is SalonBookingsException
             ? error.message
-            : 'تعذر تحميل حجوزات الصالون.';
+            : _t(
+                'تعذر تحميل حجوزات الصالون.',
+                'Could not load salon bookings.',
+              );
       });
     }
   }
@@ -101,7 +104,11 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
       _toast(_t('تم تأكيد الحجز وسيظهر مؤكداً للعميل.', 'Booking confirmed.'));
     } catch (error) {
       if (!mounted) return;
-      _toast(error is SalonBookingsException ? error.message : 'تعذر التأكيد.');
+      _toast(
+        error is SalonBookingsException
+            ? error.message
+            : _t('تعذر التأكيد.', 'Could not confirm.'),
+      );
     } finally {
       if (mounted) setState(() => _busy.remove(booking.id));
     }
@@ -110,11 +117,13 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
   Future<void> _cancel(SalonBooking booking) async {
     if (_busy.contains(booking.id)) return;
     if (booking.cancelLocked) {
-      final message =
-          booking.cancelLockMessage ??
-          (_english
-              ? 'Cancellation is not allowed before the time set by admin.'
-              : 'لا يمكن إلغاء الطلب قبل الوقت المحدد في لوحة الإدارة.');
+      final message = () {
+        final localized = booking.cancelLockMessageFor(_english).trim();
+        if (localized.isNotEmpty) return localized;
+        return _english
+            ? 'Cancellation is not allowed before the time set by admin.'
+            : 'لا يمكن إلغاء الطلب قبل الوقت المحدد في لوحة الإدارة.';
+      }();
       await showDialog<void>(
         context: context,
         builder: (dialog) => AlertDialog(
@@ -151,7 +160,11 @@ class _SalonBookingsScreenState extends State<SalonBookingsScreen> {
       _toast(_t('تم إلغاء الحجز.', 'Booking cancelled.'));
     } catch (error) {
       if (!mounted) return;
-      _toast(error is SalonBookingsException ? error.message : 'تعذر الإلغاء.');
+      _toast(
+        error is SalonBookingsException
+            ? error.message
+            : _t('تعذر الإلغاء.', 'Could not cancel.'),
+      );
     } finally {
       if (mounted) setState(() => _busy.remove(booking.id));
     }
@@ -437,9 +450,9 @@ class _BookingDetails extends StatelessWidget {
     final moment = booking.at;
     final specialist = booking.specialistName.isEmpty
         ? _t('أي أخصائي متاح', 'Any stylist')
-        : booking.specialistTitle.isEmpty
-        ? booking.specialistName
-        : '${booking.specialistName} · ${booking.specialistTitle}';
+        : booking.specialistTitleFor(english).isEmpty
+        ? booking.specialistNameFor(english)
+        : '${booking.specialistNameFor(english)} · ${booking.specialistTitleFor(english)}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -476,7 +489,7 @@ class _BookingDetails extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    booking.serviceName,
+                    booking.serviceNameFor(english),
                     key: Key('salon-booking-service-$id'),
                     style: TextStyle(
                       color: AppColors.gold,
@@ -629,7 +642,7 @@ class _BookingDetails extends StatelessWidget {
                   text: [
                     booking.customerAddress,
                     booking.customerCity,
-                  ].whereType<String>().join('، '),
+                  ].whereType<String>().join(english ? ', ' : '، '),
                 ),
               ],
             ],
@@ -857,7 +870,7 @@ class _BookingTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${booking.serviceName} · ${_money(booking.total, english)}',
+                          '${booking.serviceNameFor(english)} · ${_money(booking.total, english)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -931,7 +944,7 @@ class _CancelDialogState extends State<_CancelDialog> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           english
-              ? 'Cancel this booking?'
+              ? 'Cancel booking for ${widget.booking.customerName}?'
               : 'إلغاء حجز ${widget.booking.customerName}؟',
           style: TextStyle(color: AppColors.gold, fontSize: 18),
         ),

@@ -219,6 +219,9 @@ class SalonBookingController extends Controller
             'can_cancel' => $this->canCancel($booking),
             'cancel_locked' => $lockMessage !== null,
             'cancel_lock_message' => $lockMessage,
+            'cancel_lock_message_en' => $lockMessage === null
+                ? null
+                : $this->bookingSettings()->lockMessageEn(),
             'customer' => [
                 'name' => $customer?->name ?: $booking->customer_name,
                 'phone' => $booking->customer_phone ?: ($customer?->phone ?? ''),
@@ -236,6 +239,7 @@ class SalonBookingController extends Controller
             ],
             'specialist' => [
                 'name' => $booking->specialist?->name ?? '',
+                'name_en' => $booking->specialist?->name_en ?? '',
                 'title' => $booking->specialist?->title ?? '',
                 'title_en' => $booking->specialist?->title_en ?? '',
             ],

@@ -29,6 +29,30 @@ class _BookingsScreenState extends State<BookingsScreen> {
   var _loading = true;
   String? _error;
 
+  bool get _english => AccountStore.instance.isEnglish;
+
+  String _friendlyError(Object error) {
+    if (error is BookingsException) {
+      return _localizeApiMessage(error.message);
+    }
+    return _english
+        ? 'Could not load bookings.'
+        : 'تعذر تحميل الحجوزات.';
+  }
+
+  String _localizeApiMessage(String message) {
+    if (!_english) return message;
+    const map = {
+      'يلزم تسجيل الدخول.': 'Please sign in.',
+      'هذا الموعد غير مرتبط بحسابك.': 'This booking is not linked to your account.',
+      'لا يمكن إلغاء هذا الموعد.': 'This booking cannot be cancelled.',
+      'تعذر إلغاء الموعد.': 'Could not cancel the visit.',
+      'تعذر إرسال التقييم.': 'Could not send the review.',
+      'تعذر تحميل الحجوزات.': 'Could not load bookings.',
+    };
+    return map[message] ?? message;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -74,11 +98,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = error is BookingsException
-            ? error.message
-            : (Directionality.of(context) == TextDirection.ltr
-                ? 'Could not load bookings.'
-                : 'تعذر تحميل الحجوزات.');
+        _error = _friendlyError(error);
       });
     }
   }
@@ -124,36 +144,39 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Future<void> _cancel(CustomerBooking booking) async {
-    final english = Directionality.of(context) == TextDirection.ltr;
+    final english = _english;
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.panel,
-          title: Text(
-            english ? 'Cancel this visit?' : 'إلغاء هذا الموعد؟',
-            style: TextStyle(color: AppColors.gold),
-          ),
-          content: Text(
-            english
-                ? 'The salon will see the appointment as cancelled.'
-                : 'سيظهر الموعد ملغياً لدى الصالون.',
-            style: TextStyle(color: AppColors.goldSoft, height: 1.5),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(english ? 'Keep it' : 'الإبقاء'),
+        return Directionality(
+          textDirection: english ? TextDirection.ltr : TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: AppColors.panel,
+            title: Text(
+              english ? 'Cancel this visit?' : 'إلغاء هذا الموعد؟',
+              style: TextStyle(color: AppColors.gold),
             ),
-            TextButton(
-              key: const Key('bookings-cancel-confirm'),
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                english ? 'Cancel visit' : 'إلغاء الموعد',
-                style: TextStyle(color: AppColors.gold),
+            content: Text(
+              english
+                  ? 'The salon will see the appointment as cancelled.'
+                  : 'سيظهر الموعد ملغياً لدى الصالون.',
+              style: TextStyle(color: AppColors.goldSoft, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(english ? 'Keep it' : 'الإبقاء'),
               ),
-            ),
-          ],
+              TextButton(
+                key: const Key('bookings-cancel-confirm'),
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  english ? 'Cancel visit' : 'إلغاء الموعد',
+                  style: TextStyle(color: AppColors.gold),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -163,16 +186,18 @@ class _BookingsScreenState extends State<BookingsScreen> {
       await _load();
     } catch (error) {
       if (!mounted) return;
-      final english = Directionality.of(context) == TextDirection.ltr;
       _toast(
         error is BookingsException
-            ? error.message
-            : (english ? 'Could not cancel the visit.' : 'تعذر إلغاء الموعد.'),
+            ? _localizeApiMessage(error.message)
+            : (_english
+                ? 'Could not cancel the visit.'
+                : 'تعذر إلغاء الموعد.'),
       );
     }
   }
 
   Future<void> _review(CustomerBooking booking) async {
+    final english = _english;
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -180,13 +205,16 @@ class _BookingsScreenState extends State<BookingsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (context) => _ReviewSheet(booking: booking),
+      builder: (context) => Directionality(
+        textDirection: english ? TextDirection.ltr : TextDirection.rtl,
+        child: _ReviewSheet(booking: booking, english: english),
+      ),
     );
     if (saved == true) await _load();
   }
 
   void _openDetails(CustomerBooking booking) {
-    final english = Directionality.of(context) == TextDirection.ltr;
+    final english = _english;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -233,7 +261,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final english = Directionality.of(context) == TextDirection.ltr;
+    final english = _english;
 
     return ColoredBox(
       key: const Key('bookings-screen'),
@@ -1063,9 +1091,10 @@ class _Line extends StatelessWidget {
 }
 
 class _ReviewSheet extends StatefulWidget {
-  const _ReviewSheet({required this.booking});
+  const _ReviewSheet({required this.booking, required this.english});
 
   final CustomerBooking booking;
+  final bool english;
 
   @override
   State<_ReviewSheet> createState() => _ReviewSheetState();
@@ -1101,7 +1130,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
         _saving = false;
         _error = error is BookingsException
             ? error.message
-            : (Directionality.of(context) == TextDirection.ltr
+            : (widget.english
                 ? 'Could not send the review.'
                 : 'تعذر إرسال التقييم.');
       });
@@ -1110,7 +1139,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final english = Directionality.of(context) == TextDirection.ltr;
+    final english = widget.english;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 16, 20, 18 + bottom),
