@@ -65,8 +65,11 @@ class UserResource extends Resource
                         ->avatar()
                         ->columnSpanFull(),
                     TextInput::make('name')
-                        ->label('الاسم')
+                        ->label('الاسم (عربي)')
                         ->required()
+                        ->maxLength(255),
+                    TextInput::make('name_en')
+                        ->label('الاسم (English)')
                         ->maxLength(255),
                     TextInput::make('phone')
                         ->label('الهاتف')

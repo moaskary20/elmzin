@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:muzayen/data/account_api.dart';
 import 'package:muzayen/data/auth_api.dart';
+import 'package:muzayen/data/localized.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountStore extends ChangeNotifier {
@@ -9,6 +10,7 @@ class AccountStore extends ChangeNotifier {
   static final instance = AccountStore._();
 
   static const _nameKey = 'muzayen_account_name';
+  static const _nameEnKey = 'muzayen_account_name_en';
   static const _emailKey = 'muzayen_account_email';
   static const _phoneKey = 'muzayen_account_phone';
   static const _addressKey = 'muzayen_account_address';
@@ -23,6 +25,7 @@ class AccountStore extends ChangeNotifier {
   static const _darkModeKey = 'muzayen_dark_mode';
 
   String name = '';
+  String? nameEn;
   String email = '';
   String phone = '';
   String address = '';
@@ -45,13 +48,15 @@ class AccountStore extends ChangeNotifier {
   String displayName(bool english) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return english ? 'Guest' : 'زائر';
-    return trimmed;
+    return localized(trimmed, nameEn, english);
   }
 
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       name = prefs.getString(_nameKey) ?? '';
+      nameEn = prefs.getString(_nameEnKey);
+      if (nameEn != null && nameEn!.trim().isEmpty) nameEn = null;
       email = prefs.getString(_emailKey) ?? '';
       phone = prefs.getString(_phoneKey) ?? '';
       address = prefs.getString(_addressKey) ?? '';
@@ -71,9 +76,13 @@ class AccountStore extends ChangeNotifier {
   Future<void> saveProfile({
     required String name,
     required String phone,
+    String? nameEn,
     String? photoPath,
   }) async {
     this.name = name.trim();
+    final englishName = nameEn?.trim();
+    this.nameEn =
+        englishName == null || englishName.isEmpty ? null : englishName;
     this.phone = phone.trim();
     this.photoPath = photoPath;
     notifyListeners();
@@ -107,6 +116,7 @@ class AccountStore extends ChangeNotifier {
 
   void applySession(AuthSession session) {
     name = session.name;
+    nameEn = session.nameEn;
     email = session.email;
     phone = session.phone;
     address = session.address;
@@ -133,6 +143,7 @@ class AccountStore extends ChangeNotifier {
     try {
       final session = await AccountApi.show(current);
       name = session.name;
+      nameEn = session.nameEn;
       email = session.email;
       phone = session.phone;
       address = session.address;
@@ -152,6 +163,7 @@ class AccountStore extends ChangeNotifier {
 
   Future<void> logout() async {
     name = '';
+    nameEn = null;
     email = '';
     phone = '';
     address = '';
@@ -193,6 +205,11 @@ class AccountStore extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_nameKey, name);
+      if (nameEn == null || nameEn!.isEmpty) {
+        await prefs.remove(_nameEnKey);
+      } else {
+        await prefs.setString(_nameEnKey, nameEn!);
+      }
       await prefs.setString(_emailKey, email);
       await prefs.setString(_phoneKey, phone);
       await prefs.setString(_addressKey, address);
@@ -223,6 +240,7 @@ class AccountStore extends ChangeNotifier {
   @visibleForTesting
   void reset() {
     name = '';
+    nameEn = null;
     email = '';
     phone = '';
     address = '';
@@ -256,7 +274,14 @@ class AccountStore extends ChangeNotifier {
   void _pushProfile() {
     final current = token;
     if (!loggedIn || current == null || current.isEmpty) return;
-    _send(() => AccountApi.update(token: current, name: name, phone: phone));
+    _send(
+      () => AccountApi.update(
+        token: current,
+        name: name,
+        nameEn: nameEn,
+        phone: phone,
+      ),
+    );
     final path = photoPath;
     if (path == null || path.isEmpty) return;
     _send(() => AccountApi.uploadAvatar(token: current, path: path));

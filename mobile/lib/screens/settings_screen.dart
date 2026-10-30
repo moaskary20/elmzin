@@ -26,7 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AccountStore.instance.load().whenComplete(AccountStore.instance.refresh);
   }
 
-  bool get _english => Directionality.of(context) == TextDirection.ltr;
+  bool get _english => AccountStore.instance.isEnglish;
 
   void _edit() {
     if (!AccountStore.instance.loggedIn) {

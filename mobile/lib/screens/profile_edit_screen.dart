@@ -16,16 +16,18 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late final TextEditingController _name;
+  late final TextEditingController _nameEn;
   late final TextEditingController _phone;
   String? _photo;
 
-  bool get _english => Directionality.of(context) == TextDirection.ltr;
+  bool get _english => AccountStore.instance.isEnglish;
 
   @override
   void initState() {
     super.initState();
     final account = AccountStore.instance;
     _name = TextEditingController(text: account.name);
+    _nameEn = TextEditingController(text: account.nameEn ?? '');
     _phone = TextEditingController(text: account.phone);
     _photo = account.photoPath;
   }
@@ -33,6 +35,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _nameEn.dispose();
     _phone.dispose();
     super.dispose();
   }
@@ -63,6 +66,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (name.isEmpty) return;
     AccountStore.instance.saveProfile(
       name: name,
+      nameEn: _nameEn.text.trim(),
       phone: _phone.text,
       photoPath: _photo,
     );
@@ -71,7 +75,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final english = Directionality.of(context) == TextDirection.ltr;
+    final english = _english;
     final tone = SettingsTone.of(AccountStore.instance.darkMode);
 
     return Scaffold(
@@ -113,7 +117,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             tone: tone,
             controller: _name,
             key: const Key('profile-name'),
-            label: english ? 'Name' : 'الاسم',
+            label: english ? 'Name (Arabic)' : 'الاسم (عربي)',
+          ),
+          const SizedBox(height: 14),
+          _field(
+            tone: tone,
+            controller: _nameEn,
+            key: const Key('profile-name-en'),
+            label: english ? 'Name (English)' : 'الاسم (English)',
           ),
           const SizedBox(height: 14),
           _field(

@@ -11,6 +11,7 @@ class AccountApi {
   static Future<void> Function({
     required String token,
     String? name,
+    String? nameEn,
     String? phone,
     bool? notifications,
     bool? darkMode,
@@ -111,6 +112,7 @@ class AccountApi {
   static Future<void> _update({
     required String token,
     String? name,
+    String? nameEn,
     String? phone,
     bool? notifications,
     bool? darkMode,
@@ -118,6 +120,7 @@ class AccountApi {
   }) async {
     final body = <String, Object?>{};
     if (name != null) body['name'] = name;
+    if (nameEn != null) body['name_en'] = nameEn;
     if (phone != null) body['phone'] = phone;
     if (notifications != null) body['notifications'] = notifications;
     if (darkMode != null) body['dark_mode'] = darkMode;

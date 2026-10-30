@@ -27,6 +27,7 @@ class User extends Authenticatable implements FilamentUser
      */
     protected $fillable = [
         'name',
+        'name_en',
         'email',
         'phone',
         'password',
@@ -90,6 +91,9 @@ class User extends Authenticatable implements FilamentUser
             }
 
             $salon->name = $user->name;
+            if (filled($user->name_en)) {
+                $salon->name_en = $user->name_en;
+            }
             $salon->phone = $user->phone;
             if (filled($user->address)) {
                 $salon->address = $user->address;
@@ -112,9 +116,15 @@ class User extends Authenticatable implements FilamentUser
 
     public function toAccountArray(string $host): array
     {
+        $nameEn = $this->name_en;
+        if (! filled($nameEn) && $this->role === UserRole::Salon) {
+            $nameEn = $this->salon?->name_en;
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'name_en' => $nameEn,
             'email' => $this->email,
             'phone' => $this->phone,
             'address' => $this->address,

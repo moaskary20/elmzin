@@ -12,6 +12,7 @@ class AuthSession {
     required this.address,
     required this.role,
     required this.token,
+    this.nameEn,
     this.notifications = true,
     this.darkMode = true,
     this.locale = 'ar',
@@ -21,6 +22,7 @@ class AuthSession {
   });
 
   final String name;
+  final String? nameEn;
   final String email;
   final String phone;
   final String address;
@@ -34,8 +36,10 @@ class AuthSession {
   final int loyaltyPoints;
 
   factory AuthSession.fromJson(Map<String, dynamic> data, {String token = ''}) {
+    final nameEn = data['name_en']?.toString().trim();
     return AuthSession(
       name: (data['name'] as String?) ?? '',
+      nameEn: nameEn == null || nameEn.isEmpty ? null : nameEn,
       email: (data['email'] as String?) ?? '',
       phone: (data['phone'] as String?) ?? '',
       address: (data['address'] as String?) ?? '',

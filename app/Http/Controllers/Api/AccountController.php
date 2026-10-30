@@ -37,6 +37,7 @@ class AccountController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:120'],
+            'name_en' => ['sometimes', 'nullable', 'string', 'max:120'],
             'phone' => ['sometimes', 'required', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user->id)],
             'notifications' => ['sometimes', 'boolean'],
             'dark_mode' => ['sometimes', 'boolean'],
@@ -47,6 +48,9 @@ class AccountController extends Controller
 
         if (array_key_exists('name', $data)) {
             $user->name = $data['name'];
+        }
+        if (array_key_exists('name_en', $data)) {
+            $user->name_en = filled($data['name_en'] ?? null) ? trim((string) $data['name_en']) : null;
         }
         if (array_key_exists('phone', $data)) {
             $user->phone = $data['phone'];
