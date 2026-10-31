@@ -80,6 +80,7 @@ class _SalonScreenState extends State<SalonScreen> {
   Widget build(BuildContext context) {
     final detail = _detail;
     final body = SafeArea(
+      top: false,
       child: _loading || detail == null
           ? Center(
               child: CircularProgressIndicator(color: widget.palette.accent),
@@ -111,15 +112,15 @@ class _SalonScreenState extends State<SalonScreen> {
             ),
     );
 
+    // Avoid a nested Scaffold inside AppShell — on Android release builds a
+    // layout assert can collapse the overlay into a blank white screen.
     return SalonTheme(
       palette: widget.palette,
       child: Directionality(
         textDirection: _english ? TextDirection.ltr : TextDirection.rtl,
-        child: Scaffold(
-          backgroundColor: _kids
-              ? Colors.transparent
-              : widget.palette.background,
-          body: _kids ? KidsBackdrop(child: body) : body,
+        child: Material(
+          color: _kids ? Colors.transparent : widget.palette.background,
+          child: _kids ? KidsBackdrop(child: body) : body,
         ),
       ),
     );
@@ -214,18 +215,18 @@ class _SalonBody extends StatelessWidget {
     final days = _upcomingDays();
     final times = day == null ? const <String>[] : _timesFor(day!, specialists);
     final ready = serviceId != null && day != null && time != null;
-    final todayHour = detail.hours.cast<SalonHour?>().firstWhere(
-      (hour) => hour != null && !hour.isClosed && hour.opensAt != null,
-      orElse: () => null,
-    );
+    final todayHour = detail.hourFor(_weekday(DateTime.now()));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
       children: [
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: BackButton(
+          child: IconButton(
+            key: const Key('salon-back'),
+            tooltip: english ? 'Back' : 'رجوع',
             color: SalonTheme.of(context).accent,
+            icon: const Icon(Icons.arrow_back),
             onPressed: onBack,
           ),
         ),
@@ -598,9 +599,12 @@ class _SalonBody extends StatelessWidget {
       children: [
         Icon(icon, color: SalonTheme.of(context).accent, size: 16),
         const SizedBox(width: 4),
-        Flexible(
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 220),
           child: Text(
             text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: onTap != null
                   ? SalonTheme.of(context).accent
@@ -910,7 +914,7 @@ class _ReviewCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${'★' * review.rating}${'☆' * (5 - review.rating)}',
+                _stars(review.rating),
                 style: TextStyle(
                   color: SalonTheme.of(context).accent,
                   fontSize: 12,
@@ -945,6 +949,12 @@ class _ReviewCard extends StatelessWidget {
   }
 }
 
+String _stars(int rating) {
+  final filled = rating.clamp(0, 5);
+  final empty = 5 - filled;
+  return '${'★' * filled}${'☆' * empty}';
+}
+
 int _weekday(DateTime date) =>
     date.weekday == DateTime.sunday ? 0 : date.weekday;
 
@@ -956,7 +966,10 @@ String _dateKey(DateTime date) {
 
 int _minutes(String clock) {
   final parts = clock.split(':');
-  return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  if (parts.length < 2) return 0;
+  final hour = int.tryParse(parts[0]) ?? 0;
+  final minute = int.tryParse(parts[1]) ?? 0;
+  return hour * 60 + minute;
 }
 
 String _clock(int minutes) {

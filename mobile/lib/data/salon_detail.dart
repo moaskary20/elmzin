@@ -64,7 +64,7 @@ class SalonServiceItem {
   final int durationMinutes;
   final List<int> specialistIds;
 
-  String nameFor(bool english) => localized(name, nameEn, english);
+  String nameFor(bool english) => serviceNameFor(name, nameEn, english);
 
   String descriptionFor(bool english) =>
       localized(description, descriptionEn, english);
@@ -340,8 +340,10 @@ class SalonDetailApi {
       return value.whereType<Map<String, dynamic>>().toList();
     }
 
+    int whole(Object? value) => value is num ? value.toInt() : 0;
+
     return SalonDetail(
-      id: row['id'] is int ? row['id'] as int : 0,
+      id: whole(row['id']),
       name: '${row['name'] ?? ''}',
       nameEn: row['name_en'] as String?,
       about: '${row['about'] ?? ''}',
@@ -364,9 +366,7 @@ class SalonDetailApi {
       ratingAvg: row['rating_avg'] is num
           ? (row['rating_avg'] as num).toDouble()
           : 0,
-      reviewsCount: row['reviews_count'] is int
-          ? row['reviews_count'] as int
-          : 0,
+      reviewsCount: whole(row['reviews_count']),
       verified: row['verified'] == true,
       imageUrl: row['image_url'] as String?,
       media: () {
@@ -382,11 +382,11 @@ class SalonDetailApi {
       hours: () {
         final byDay = <int, SalonHour>{};
         for (final hour in maps(row['hours'])) {
-          final day = hour['day'] is num ? (hour['day'] as num).toInt() : 0;
+          final day = whole(hour['day']);
           byDay[day] = SalonHour(
             day: day,
-            opensAt: hour['opens_at'] as String?,
-            closesAt: hour['closes_at'] as String?,
+            opensAt: hour['opens_at']?.toString(),
+            closesAt: hour['closes_at']?.toString(),
             isClosed: hour['is_closed'] == true,
           );
         }
@@ -395,7 +395,7 @@ class SalonDetailApi {
       services: maps(row['services'])
           .map(
             (service) => SalonServiceItem(
-              id: service['id'] is int ? service['id'] as int : 0,
+              id: whole(service['id']),
               name: '${service['name'] ?? ''}',
               nameEn: service['name_en'] as String?,
               description: '${service['description'] ?? ''}',
@@ -403,13 +403,14 @@ class SalonDetailApi {
               price: service['price'] is num
                   ? (service['price'] as num).toDouble()
                   : 0,
-              durationMinutes: service['duration_minutes'] is int
-                  ? service['duration_minutes'] as int
+              durationMinutes: service['duration_minutes'] is num
+                  ? (service['duration_minutes'] as num).toInt()
                   : 30,
               specialistIds: service['specialist_ids'] is List
-                  ? (service['specialist_ids'] as List)
-                        .whereType<int>()
-                        .toList()
+                  ? [
+                      for (final id in service['specialist_ids'] as List)
+                        if (id is num) id.toInt(),
+                    ]
                   : const [],
             ),
           )
@@ -417,7 +418,7 @@ class SalonDetailApi {
       specialists: maps(row['specialists'])
           .map(
             (specialist) => SalonSpecialistItem(
-              id: specialist['id'] is int ? specialist['id'] as int : 0,
+              id: whole(specialist['id']),
               name: '${specialist['name'] ?? ''}',
               nameEn: specialist['name_en'] as String?,
               title: '${specialist['title'] ?? ''}',
@@ -429,7 +430,7 @@ class SalonDetailApi {
           .map(
             (review) => SalonReviewItem(
               customerName: '${review['customer_name'] ?? ''}',
-              rating: review['rating'] is int ? review['rating'] as int : 0,
+              rating: whole(review['rating']).clamp(0, 5),
               comment: '${review['comment'] ?? ''}',
               date: '${review['created_at'] ?? ''}',
             ),
@@ -438,9 +439,7 @@ class SalonDetailApi {
       booked: maps(row['booked'])
           .map(
             (slot) => BookedSlot(
-              specialistId: slot['specialist_id'] is int
-                  ? slot['specialist_id'] as int
-                  : 0,
+              specialistId: whole(slot['specialist_id']),
               date: '${slot['date'] ?? ''}',
               time: '${slot['time'] ?? ''}',
             ),

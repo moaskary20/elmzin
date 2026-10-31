@@ -6,6 +6,29 @@ String localized(String primary, String? english, bool isEnglish) {
   return value;
 }
 
+/// Common salon service labels when API/`name_en` is empty.
+const serviceNamesEn = <String, String>{
+  'قص شعر': 'Haircut',
+  'تهذيب لحية': 'Beard trim',
+  'حلاقة كاملة': 'Full shave',
+  'صبغة شعر': 'Hair color',
+  'عناية بشرة': 'Skin care',
+  'قصة أطفال': 'Kids haircut',
+  'تسريحة مناسبات': 'Occasion hairstyle',
+  'رسمات شعر': 'Hair designs',
+  'مكياج': 'Makeup',
+  'مكياج سهرة': 'Evening makeup',
+  'مكياج سهرة عروس': 'Bridal makeup',
+};
+
+String serviceNameFor(String name, String? nameEn, bool english) {
+  final fromApi = nameEn?.trim();
+  if (fromApi != null && fromApi.isNotEmpty) {
+    return localized(name, fromApi, english);
+  }
+  return localized(name, serviceNamesEn[name.trim()], english);
+}
+
 String? localizedText(Object? value) {
   final text = value?.toString().trim();
   if (text == null || text.isEmpty) return null;

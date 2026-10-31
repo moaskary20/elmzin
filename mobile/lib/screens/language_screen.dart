@@ -85,77 +85,85 @@ class _LanguageScreenState extends State<LanguageScreen>
                             begin: const Offset(0, 0.04),
                             end: Offset.zero,
                           ).animate(curved),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 28),
-                            child: Column(
-                              children: [
-                                const Spacer(flex: 3),
-                                const _FloatingLogo(),
-                                const SizedBox(height: 28),
-                                Container(
-                                  width: 56,
-                                  height: 1,
-                                  color: AppColors.gold,
-                                ),
-                                const SizedBox(height: 22),
-                                Text(
-                                  'لغة التطبيق',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: AppColors.gold,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.2,
+                          child: CustomScrollView(
+                            slivers: [
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 28,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      const Spacer(flex: 3),
+                                      const _FloatingLogo(),
+                                      const SizedBox(height: 28),
+                                      Container(
+                                        width: 56,
+                                        height: 1,
+                                        color: AppColors.gold,
+                                      ),
+                                      const SizedBox(height: 22),
+                                      Text(
+                                        'لغة التطبيق',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.gold,
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'App language',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.goldSoft,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'اختر العربية أو الإنجليزية',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.goldSoft,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Choose Arabic or English',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.goldSoft
+                                              .withValues(alpha: 0.85),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 36),
+                                      _LanguageChoice(
+                                        label: 'العربية',
+                                        caption: 'Arabic',
+                                        selected: _selected == 'ar',
+                                        onTap: () => _select('ar'),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _LanguageChoice(
+                                        label: 'English',
+                                        caption: 'الإنجليزية',
+                                        selected: _selected == 'en',
+                                        onTap: () => _select('en'),
+                                      ),
+                                      const Spacer(flex: 4),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'App language',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: AppColors.goldSoft,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'اختر العربية أو الإنجليزية',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: AppColors.goldSoft,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  'Choose Arabic or English',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: AppColors.goldSoft.withValues(
-                                      alpha: 0.85,
-                                    ),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 36),
-                                _LanguageChoice(
-                                  label: 'العربية',
-                                  caption: 'Arabic',
-                                  selected: _selected == 'ar',
-                                  onTap: () => _select('ar'),
-                                ),
-                                const SizedBox(height: 12),
-                                _LanguageChoice(
-                                  label: 'English',
-                                  caption: 'الإنجليزية',
-                                  selected: _selected == 'en',
-                                  onTap: () => _select('en'),
-                                ),
-                                const Spacer(flex: 4),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

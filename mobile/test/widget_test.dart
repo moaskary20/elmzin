@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:muzayen/data/account_store.dart';
 import 'package:muzayen/data/auth_api.dart';
 import 'package:muzayen/data/cart_store.dart';
@@ -42,7 +43,9 @@ import 'package:muzayen/screens/services_screen.dart';
 import 'package:muzayen/data/support_pages.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    AccountStore.instance.reset();
     SubscriptionPlansApi.load = () async => const [_freePlan];
     NotificationsStore.instance.reset();
     NotificationsStore.pollEvery = null;
@@ -72,12 +75,16 @@ void main() {
     await tester.pump();
 
     expect(find.text('العربية'), findsOneWidget);
-    expect(find.text('لغة التطبيق العربية'), findsOneWidget);
-    expect(find.text('English'), findsNothing);
+    expect(find.text('لغة التطبيق'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
 
     await tester.tap(find.text('العربية'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+    // SharedPreferences + route transition (avoid pumpAndSettle: home header pulses forever).
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byType(HomeScreen).evaluate().isNotEmpty) break;
+    }
 
     expect(find.text('الكرسي بانتظارك'), findsOneWidget);
     expect(
@@ -292,7 +299,11 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('العربية'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+    // SharedPreferences + route transition (avoid pumpAndSettle: home header pulses forever).
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byType(HomeScreen).evaluate().isNotEmpty) break;
+    }
 
     final homeScroll = find.descendant(
       of: find.byType(HomeScreen),
@@ -438,36 +449,22 @@ void main() {
     expect(find.byType(SalonScreen), findsOneWidget);
     expect(
       tester
-          .widget<Scaffold>(
+          .widget<Material>(
             find.descendant(
               of: find.byType(SalonScreen),
-              matching: find.byType(Scaffold),
-            ),
+              matching: find.byType(Material),
+            ).first,
           )
-          .backgroundColor,
+          .color,
       SalonPalette.blush.background,
     );
+    // Home header is hidden while a salon overlay is open.
+    expect(find.byKey(const Key('header-heart')), findsNothing);
     expect(
       tester.widget<Text>(find.text('الرئيسية')).style?.color,
       Colors.white,
     );
-    expect(
-      tester
-          .widget<Icon>(
-            find.descendant(
-              of: find.byKey(const Key('header-heart')),
-              matching: find.byType(Icon),
-            ),
-          )
-          .color,
-      SalonPalette.blush.accent,
-    );
-    await tester.tap(
-      find.descendant(
-        of: find.byType(SalonScreen),
-        matching: find.byType(BackButton),
-      ),
-    );
+    await tester.tap(find.byKey(const Key('salon-back')));
     await tester.pump();
     tester.state<ScrollableState>(categoryScroll).position.jumpTo(0);
     await tester.pump();
@@ -557,7 +554,11 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('العربية'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+    // SharedPreferences + route transition (avoid pumpAndSettle: home header pulses forever).
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byType(HomeScreen).evaluate().isNotEmpty) break;
+    }
 
     await tester.tap(find.text('الإعدادات'));
     await tester.pump();
@@ -627,8 +628,9 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.byKey(const Key('language-ar')), findsOneWidget);
-    expect(find.byKey(const Key('language-en')), findsNothing);
+    expect(find.byKey(const Key('language-en')), findsOneWidget);
     await tester.tap(find.byKey(const Key('language-ar')));
+    await tester.pump();
     await tester.pump();
     expect(find.text('تعديل الملف الشخصي'), findsOneWidget);
     expect(find.text('زائر'), findsOneWidget);
@@ -887,7 +889,11 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('العربية'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+    // SharedPreferences + route transition (avoid pumpAndSettle: home header pulses forever).
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byType(HomeScreen).evaluate().isNotEmpty) break;
+    }
 
     await tester.tap(find.byKey(const Key('header-heart')));
     await tester.pump();
@@ -1219,6 +1225,30 @@ void main() {
     expect(find.text('2 مكان'), findsOneWidget);
   });
 
+  testWidgets('services screen shows English names in English locale', (
+    tester,
+  ) async {
+    CategoriesApi.load = () async => HomeCategory.fallback;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ServicesScreen(
+            locale: const Locale('en'),
+            onOpenSalon: (_, _) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Most requested'), findsWidgets);
+    expect(find.text('Haircut'), findsWidgets);
+    expect(find.text('Beard trim'), findsWidgets);
+    expect(find.text('قص شعر'), findsNothing);
+    expect(find.text('تهذيب لحية'), findsNothing);
+  });
+
   testWidgets('services groups salons and opens one', (tester) async {
     tester.view.physicalSize = const Size(400, 1400);
     tester.view.devicePixelRatio = 1;
@@ -1283,7 +1313,7 @@ void main() {
     final visit = CustomerBooking(
       id: 4,
       status: 'confirmed',
-      date: '2026-10-08',
+      date: '2026-11-08',
       time: '18:30',
       total: 180,
       subtotal: 180,

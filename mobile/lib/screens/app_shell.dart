@@ -191,10 +191,16 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  /// Overlays cover the tab underneath, including the strip behind the header.
-  Widget _overlay(Widget child) {
+  /// Overlays cover the tab. [belowHeader] keeps room for HomeHeader
+  /// (categories); full-screen overlays own their chrome (salon, cart, …).
+  Widget _overlay(Widget child, {bool belowHeader = false}) {
     return Positioned.fill(
-      child: ColoredBox(color: _palette.background, child: _belowHeader(child)),
+      child: ColoredBox(
+        color: _palette.background,
+        child: belowHeader
+            ? _belowHeader(child)
+            : SafeArea(bottom: false, child: child),
+      ),
     );
   }
 
@@ -322,6 +328,7 @@ class _AppShellState extends State<AppShell> {
                       onBack: () => setState(() => _category = null),
                       onOpenSalon: (id) => _openSalon(id, _category!.slug),
                     ),
+                    belowHeader: true,
                   ),
                 if (_salonId != null)
                   _overlay(
@@ -358,18 +365,22 @@ class _AppShellState extends State<AppShell> {
                       onOpenBookings: _bookingsFromCart,
                     ),
                   ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: HomeHeader(
-                    english: english,
-                    palette: _palette,
-                    onOpenFavorites: _openFavorites,
-                    onOpenNotifications: _openNotifications,
-                    onOpenCart: _openCart,
+                // Home header stays for tabs + category. Salon/cart/favorites/
+                // notices are full-screen so Android does not leave a blank
+                // strip under a floating header.
+                if (_salonId == null && !_favorites && !_notices && !_cart)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: HomeHeader(
+                      english: english,
+                      palette: _palette,
+                      onOpenFavorites: _openFavorites,
+                      onOpenNotifications: _openNotifications,
+                      onOpenCart: _openCart,
+                    ),
                   ),
-                ),
                 Positioned(
                   top: 0,
                   left: 0,

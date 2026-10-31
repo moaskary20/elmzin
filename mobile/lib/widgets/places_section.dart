@@ -110,7 +110,7 @@ class _PlacesSectionState extends State<PlacesSection> {
             _heading(_english ? 'Muzayen picks' : 'ترشيحات المزين'),
             const SizedBox(height: 14),
             SizedBox(
-              height: 280,
+              height: 292,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: selected.length,
@@ -736,7 +736,7 @@ class _SalonCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       salon.placeFor(english),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: palette.soft, fontSize: 12),
                     ),

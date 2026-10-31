@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'data/account_store.dart';
 import 'screens/splash_screen.dart';
@@ -62,6 +63,13 @@ class _MuzayenAppState extends State<MuzayenApp> {
       debugShowCheckedModeBanner: false,
       locale: locale,
       supportedLocales: const [Locale('ar'), Locale('en')],
+      // Without Global* delegates, locale: ar leaves MaterialLocalizations
+      // missing — BackButton / tooltips then blank the salon screen on Android.
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         useMaterial3: true,
         brightness: _dark ? Brightness.dark : Brightness.light,

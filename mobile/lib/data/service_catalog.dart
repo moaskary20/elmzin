@@ -67,7 +67,7 @@ class ServiceOffer {
         districtEn: districtEn,
       );
 
-  String nameFor(bool english) => localized(name, nameEn, english);
+  String nameFor(bool english) => serviceNameFor(name, nameEn, english);
 
   String descriptionFor(bool english) =>
       localized(description, descriptionEn, english);
@@ -76,30 +76,31 @@ class ServiceOffer {
       localized(salonName, salonNameEn, english);
 
   factory ServiceOffer.fromJson(Map<String, dynamic> row) {
+    int whole(Object? value) => value is num ? value.toInt() : 0;
     final salon = row['salon'] is Map
         ? Map<String, dynamic>.from(row['salon'] as Map)
         : const <String, dynamic>{};
     return ServiceOffer(
-      id: row['id'] is int ? row['id'] as int : 0,
+      id: whole(row['id']),
       name: '${row['name'] ?? ''}',
-      nameEn: row['name_en'] as String?,
+      nameEn: localizedText(row['name_en']),
       description: '${row['description'] ?? ''}',
-      descriptionEn: row['description_en'] as String?,
+      descriptionEn: localizedText(row['description_en']),
       price: row['price'] is num ? (row['price'] as num).toDouble() : 0,
-      durationMinutes: row['duration_minutes'] is int
-          ? row['duration_minutes'] as int
+      durationMinutes: row['duration_minutes'] is num
+          ? (row['duration_minutes'] as num).toInt()
           : 30,
-      bookings: row['bookings_count'] is int ? row['bookings_count'] as int : 0,
-      salonId: salon['id'] is int ? salon['id'] as int : 0,
+      bookings: whole(row['bookings_count']),
+      salonId: whole(salon['id']),
       salonName: '${salon['name'] ?? ''}',
-      salonNameEn: salon['name_en'] as String?,
+      salonNameEn: localizedText(salon['name_en']),
       categorySlug: '${salon['category_slug'] ?? ''}',
       city: '${salon['city'] ?? ''}',
-      cityEn: salon['city_en'] as String?,
+      cityEn: localizedText(salon['city_en']),
       district: '${salon['district'] ?? ''}',
-      districtEn: salon['district_en'] as String?,
-      address: salon['address'] as String?,
-      addressEn: salon['address_en'] as String?,
+      districtEn: localizedText(salon['district_en']),
+      address: localizedText(salon['address']),
+      addressEn: localizedText(salon['address_en']),
       rating: salon['rating_avg'] is num
           ? (salon['rating_avg'] as num).toDouble()
           : 0,
@@ -113,39 +114,51 @@ class ServiceOffer {
     ServiceOffer(
       id: 1,
       name: 'قص شعر',
+      nameEn: 'Haircut',
       price: 120,
       durationMinutes: 30,
       salonId: 1,
       salonName: 'صالون الليث',
+      salonNameEn: 'Al-Layth Salon',
       categorySlug: 'men',
       city: 'القاهرة',
+      cityEn: 'Cairo',
       district: 'مدينة نصر',
+      districtEn: 'Nasr City',
       rating: 4.9,
       verified: true,
     ),
     ServiceOffer(
       id: 2,
       name: 'تهذيب لحية',
+      nameEn: 'Beard trim',
       price: 80,
       durationMinutes: 20,
       salonId: 1,
       salonName: 'صالون الليث',
+      salonNameEn: 'Al-Layth Salon',
       categorySlug: 'men',
       city: 'القاهرة',
+      cityEn: 'Cairo',
       district: 'مدينة نصر',
+      districtEn: 'Nasr City',
       rating: 4.9,
       verified: true,
     ),
     ServiceOffer(
       id: 3,
       name: 'قص شعر',
+      nameEn: 'Haircut',
       price: 100,
       durationMinutes: 30,
       salonId: 4,
       salonName: 'بيت الحلاقة',
+      salonNameEn: 'Barber House',
       categorySlug: 'men',
       city: 'القاهرة',
+      cityEn: 'Cairo',
       district: 'المعادي',
+      districtEn: 'Maadi',
       rating: 4.7,
       homeService: true,
       verified: true,
@@ -153,13 +166,17 @@ class ServiceOffer {
     ServiceOffer(
       id: 4,
       name: 'صبغة شعر',
+      nameEn: 'Hair color',
       price: 450,
       durationMinutes: 90,
       salonId: 2,
       salonName: 'لمسة جمال',
+      salonNameEn: 'Beauty Touch',
       categorySlug: 'women',
       city: 'الجيزة',
+      cityEn: 'Giza',
       district: 'المهندسين',
+      districtEn: 'Mohandessin',
       rating: 4.6,
       homeService: true,
       verified: true,
@@ -167,26 +184,34 @@ class ServiceOffer {
     ServiceOffer(
       id: 5,
       name: 'عناية بشرة',
+      nameEn: 'Skin care',
       price: 380,
       durationMinutes: 50,
       salonId: 5,
       salonName: 'دار الجمال',
+      salonNameEn: 'Beauty House',
       categorySlug: 'women',
       city: 'القاهرة',
+      cityEn: 'Cairo',
       district: 'الزمالك',
+      districtEn: 'Zamalek',
       rating: 4.9,
       verified: true,
     ),
     ServiceOffer(
       id: 6,
       name: 'قصة أطفال',
+      nameEn: 'Kids haircut',
       price: 90,
       durationMinutes: 25,
       salonId: 3,
       salonName: 'براعم',
+      salonNameEn: 'Baraem',
       categorySlug: 'kids',
       city: 'القاهرة',
+      cityEn: 'Cairo',
       district: 'التجمع الخامس',
+      districtEn: 'New Cairo',
       rating: 4.2,
     ),
   ];

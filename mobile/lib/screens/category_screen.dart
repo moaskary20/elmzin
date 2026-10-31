@@ -95,9 +95,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 children: [
                   Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: BackButton(
+                    child: IconButton(
                       key: const Key('category-back'),
+                      tooltip: language == 'en' ? 'Back' : 'رجوع',
                       color: titleColor,
+                      icon: const Icon(Icons.arrow_back),
                       onPressed: widget.onBack,
                     ),
                   ),

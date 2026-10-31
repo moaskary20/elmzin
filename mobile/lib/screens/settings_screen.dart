@@ -7,7 +7,6 @@ import 'info_screen.dart';
 import 'login_screen.dart';
 import 'loyalty_screen.dart';
 import 'profile_edit_screen.dart';
-import 'register_screen.dart';
 import 'wallet_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -33,10 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool get _english => AccountStore.instance.isEnglish;
 
   void _edit() {
-    if (!AccountStore.instance.loggedIn) {
-      _push(const RegisterScreen());
-      return;
-    }
     _push(const ProfileEditScreen());
   }
 

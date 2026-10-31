@@ -129,15 +129,24 @@ class _VideoSlideState extends State<_VideoSlide> {
   }
 
   Future<void> _boot() async {
+    VideoPlayerController? controller;
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
       _controller = controller;
       await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
       await controller.setLooping(true);
-      if (!mounted) return;
       setState(() => _ready = true);
-      await controller.play();
+      // Autoplay is optional — failures must not blank the salon page.
+      try {
+        await controller.play();
+      } catch (_) {}
     } catch (_) {
+      await controller?.dispose();
+      _controller = null;
       if (!mounted) return;
       setState(() => _failed = true);
     }
