@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/account_store.dart';
+import '../data/app_popup.dart';
 import '../data/home_category.dart';
 import '../data/notifications_store.dart';
 import '../theme/app_colors.dart';
@@ -40,6 +41,7 @@ class _AppShellState extends State<AppShell> {
   var _cart = false;
   String? _cartHighlight;
   var _bookingsTick = 0;
+  var _popupShown = false;
   late final Widget _settingsPage;
 
   bool get _women => _category?.slug == 'women' || _salonSlug == 'women';
@@ -73,6 +75,62 @@ class _AppShellState extends State<AppShell> {
       }
     });
     NotificationsStore.instance.attach();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowPopup());
+  }
+
+  Future<void> _maybeShowPopup() async {
+    if (_popupShown || !mounted) return;
+    _popupShown = true;
+    final popup = await AppPopupApi.load();
+    if (!mounted || popup == null) return;
+
+    final english = _locale.languageCode == 'en';
+    final direction = english ? TextDirection.ltr : TextDirection.rtl;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialog) => Directionality(
+        textDirection: direction,
+        child: AlertDialog(
+          key: const Key('app-popup-dialog'),
+          backgroundColor: AppColors.panel,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+            side: BorderSide(color: AppColors.line),
+          ),
+          title: Text(
+            popup.titleFor(english),
+            style: TextStyle(
+              color: AppColors.gold,
+              fontWeight: FontWeight.w800,
+              fontSize: 20,
+            ),
+          ),
+          content: Text(
+            popup.bodyFor(english),
+            style: TextStyle(
+              color: AppColors.goldSoft,
+              fontSize: 14,
+              height: 1.55,
+            ),
+          ),
+          actions: [
+            FilledButton(
+              key: const Key('app-popup-ok'),
+              onPressed: () => Navigator.of(dialog).pop(),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.ink,
+              ),
+              child: Text(
+                popup.buttonFor(english),
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

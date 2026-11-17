@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AppPageController;
+use App\Http\Controllers\Api\AppPopupController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\MobileSlideController;
@@ -47,6 +48,7 @@ Route::patch('/salon/specialists/{specialist}', [SalonProfileController::class, 
 Route::delete('/salon/specialists/{specialist}', [SalonProfileController::class, 'destroySpecialist']);
 Route::get('/users/{user}/avatar', [AccountController::class, 'avatarFile']);
 Route::get('/pages', [AppPageController::class, 'index']);
+Route::get('/popup', [AppPopupController::class, 'show']);
 Route::get('/slides', [MobileSlideController::class, 'index']);
 Route::get('/slides/{slide}/image', [MobileSlideController::class, 'image']);
 Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index']);
