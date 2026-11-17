@@ -20,7 +20,9 @@ class SubscriptionService
         return $salon->subscriptions()->create([
             'subscription_plan_id' => $plan->id,
             'plan_name' => $plan->name,
-            'price' => $plan->price,
+            'pricing_type' => $plan->isPercentage() ? 'percentage' : 'fixed',
+            'price' => $plan->isPercentage() ? 0 : $plan->price,
+            'commission_percent' => $plan->isPercentage() ? $plan->commissionPercent() : null,
             'starts_at' => $start,
             'ends_at' => $plan->endsFrom($start),
             'status' => 'active',

@@ -223,7 +223,9 @@ class _PlanCardState extends State<_PlanCard>
                               ),
                             ),
                             child: Icon(
-                              plan.isFree
+                              plan.isPercentage
+                                  ? Icons.percent_rounded
+                                  : plan.isFree
                                   ? Icons.workspace_premium_rounded
                                   : Icons.diamond_outlined,
                               color: tone.ink,
@@ -312,7 +314,7 @@ class _PlanCardState extends State<_PlanCard>
                           Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
-                              plan.isFree
+                              plan.isPercentage || plan.isFree
                                   ? _pt('لمدة ${plan.durationLabelFor(false)}', 'for ${plan.durationLabelFor(true)}')
                                   : '/ ${plan.durationLabelFor(_planEnglish)}',
                               style: TextStyle(
@@ -324,7 +326,16 @@ class _PlanCardState extends State<_PlanCard>
                           ),
                         ],
                       ),
-                      if (plan.isFree) ...[
+                      if (plan.isPercentage) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          _pt(
+                            'نسبة من قيمة كل حجز بين التطبيق والصالون • بدون رسوم اشتراك ثابتة',
+                            'A share of each booking between the app and the salon • no fixed subscription fee',
+                          ),
+                          style: TextStyle(color: tone.muted, fontSize: 12),
+                        ),
+                      ] else if (plan.isFree) ...[
                         const SizedBox(height: 6),
                         Text(
                           _pt('بدون أي بيانات دفع • يبدأ فور التسجيل', 'No payment details • starts right after signup'),
@@ -821,7 +832,7 @@ Future<void> showSubscriptionWelcome(
                         child: Column(
                           children: [
                             Text(
-                              plan.isFree
+                              plan.isFree || plan.isPercentage
                                   ? _pt('${plan.priceLabelFor(false)} لمدة ${plan.durationLabelFor(false)}', '${plan.priceLabelFor(true)} for ${plan.durationLabelFor(true)}')
                                   : '${plan.priceLabelFor(_planEnglish)} / ${plan.durationLabelFor(_planEnglish)}',
                               style: TextStyle(

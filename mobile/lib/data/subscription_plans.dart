@@ -18,9 +18,12 @@ class SubscriptionPlan {
     this.taglineEn,
     this.badge,
     this.badgeEn,
+    this.pricingType = 'fixed',
     this.price = 0,
+    this.commissionPercent,
     this.priceLabelEn,
     this.isFree = false,
+    this.isPercentage = false,
     this.isFeatured = false,
     this.features = const [],
     this.featuresEn = const [],
@@ -40,6 +43,10 @@ class SubscriptionPlan {
       return out == null || out.isEmpty ? null : out;
     }
 
+    final pricingType = '${json['pricing_type'] ?? 'fixed'}';
+    final isPercentage =
+        json['is_percentage'] == true || pricingType == 'percentage';
+
     return SubscriptionPlan(
       id: (json['id'] as num).toInt(),
       name: '${json['name'] ?? ''}',
@@ -48,10 +55,13 @@ class SubscriptionPlan {
       taglineEn: text(json['tagline_en']),
       badge: text(json['badge']),
       badgeEn: text(json['badge_en']),
+      pricingType: isPercentage ? 'percentage' : 'fixed',
       price: (json['price'] as num?)?.toDouble() ?? 0,
+      commissionPercent: (json['commission_percent'] as num?)?.toDouble(),
       priceLabel: '${json['price_label'] ?? ''}',
       priceLabelEn: text(json['price_label_en']),
-      isFree: json['is_free'] == true,
+      isFree: !isPercentage && json['is_free'] == true,
+      isPercentage: isPercentage,
       durationValue: (json['duration_value'] as num?)?.toInt() ?? 1,
       durationUnit: '${json['duration_unit'] ?? 'year'}',
       durationLabel: '${json['duration_label'] ?? ''}',
@@ -73,10 +83,13 @@ class SubscriptionPlan {
   final String? taglineEn;
   final String? badge;
   final String? badgeEn;
+  final String pricingType;
   final double price;
+  final double? commissionPercent;
   final String priceLabel;
   final String? priceLabelEn;
   final bool isFree;
+  final bool isPercentage;
   final int durationValue;
   final String durationUnit;
   final String durationLabel;

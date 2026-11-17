@@ -19,7 +19,9 @@ class SalonSubscription extends Model
         'salon_id',
         'subscription_plan_id',
         'plan_name',
+        'pricing_type',
         'price',
+        'commission_percent',
         'starts_at',
         'ends_at',
         'status',
@@ -31,10 +33,16 @@ class SalonSubscription extends Model
     {
         return [
             'price' => 'decimal:2',
+            'commission_percent' => 'decimal:2',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
         ];
+    }
+
+    public function isPercentage(): bool
+    {
+        return ($this->pricing_type ?? 'fixed') === 'percentage';
     }
 
     protected static function booted(): void
@@ -90,12 +98,17 @@ class SalonSubscription extends Model
 
     public function toApiArray(): array
     {
+        $isPercentage = $this->isPercentage();
+
         return [
             'id' => $this->id,
             'plan_id' => $this->subscription_plan_id,
             'plan_name' => $this->plan_name,
+            'pricing_type' => $isPercentage ? 'percentage' : 'fixed',
             'price' => (float) $this->price,
-            'is_free' => (float) $this->price <= 0,
+            'commission_percent' => $isPercentage ? (float) ($this->commission_percent ?? 0) : null,
+            'is_free' => ! $isPercentage && (float) $this->price <= 0,
+            'is_percentage' => $isPercentage,
             'starts_at' => $this->starts_at?->toDateString(),
             'ends_at' => $this->ends_at?->toDateString(),
             'status' => $this->state(),

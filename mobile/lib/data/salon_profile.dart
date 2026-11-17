@@ -249,28 +249,53 @@ class OwnSubscription {
     required this.status,
     required this.statusLabel,
     required this.daysLeft,
+    this.isPercentage = false,
+    this.commissionPercent,
     this.startsAt,
     this.endsAt,
   });
 
-  factory OwnSubscription.fromJson(Map<String, dynamic> json) =>
-      OwnSubscription(
-        planName: '${json['plan_name'] ?? ''}',
-        isFree: json['is_free'] == true,
-        status: '${json['status'] ?? ''}',
-        statusLabel: '${json['status_label'] ?? ''}',
-        daysLeft: (json['days_left'] as num?)?.toInt() ?? 0,
-        startsAt: json['starts_at'] as String?,
-        endsAt: json['ends_at'] as String?,
-      );
+  factory OwnSubscription.fromJson(Map<String, dynamic> json) {
+    final isPercentage =
+        json['is_percentage'] == true ||
+        '${json['pricing_type'] ?? ''}' == 'percentage';
+
+    return OwnSubscription(
+      planName: '${json['plan_name'] ?? ''}',
+      isFree: !isPercentage && json['is_free'] == true,
+      isPercentage: isPercentage,
+      commissionPercent: (json['commission_percent'] as num?)?.toDouble(),
+      status: '${json['status'] ?? ''}',
+      statusLabel: '${json['status_label'] ?? ''}',
+      daysLeft: (json['days_left'] as num?)?.toInt() ?? 0,
+      startsAt: json['starts_at'] as String?,
+      endsAt: json['ends_at'] as String?,
+    );
+  }
 
   final String planName;
   final bool isFree;
+  final bool isPercentage;
+  final double? commissionPercent;
   final String status;
   final String statusLabel;
   final int daysLeft;
   final String? startsAt;
   final String? endsAt;
+
+  String get pricingSummary {
+    if (isPercentage) {
+      final percent = commissionPercent ?? 0;
+      final digits = percent == percent.roundToDouble()
+          ? percent.toStringAsFixed(0)
+          : percent.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+      return 'عمولة $digits% للتطبيق • ';
+    }
+    if (isFree) {
+      return 'اشتراك مجاني • ';
+    }
+    return '';
+  }
 }
 
 class SalonProfileException implements Exception {

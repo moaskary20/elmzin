@@ -303,12 +303,18 @@ class Notifier
         $until = $subscription->ends_at?->format('Y-m-d');
         $plan = $subscription->plan_name;
         $planEn = filled($subscription->plan?->name_en) ? $subscription->plan->name_en : $plan;
-        $price = (float) $subscription->price <= 0
-            ? 'مجاناً'
-            : 'بقيمة '.$this->money($subscription->price);
-        $priceEn = (float) $subscription->price <= 0
-            ? 'for free'
-            : 'for '.$this->money($subscription->price, true);
+        if ($subscription->isPercentage()) {
+            $percent = rtrim(rtrim(number_format((float) ($subscription->commission_percent ?? 0), 2), '0'), '.');
+            $price = "بنسبة عمولة {$percent}% للتطبيق";
+            $priceEn = "with a {$percent}% app commission";
+        } else {
+            $price = (float) $subscription->price <= 0
+                ? 'مجاناً'
+                : 'بقيمة '.$this->money($subscription->price);
+            $priceEn = (float) $subscription->price <= 0
+                ? 'for free'
+                : 'for '.$this->money($subscription->price, true);
+        }
 
         $this->send(
             $ownerId,

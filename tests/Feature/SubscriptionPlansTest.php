@@ -144,6 +144,7 @@ class SubscriptionPlansTest extends TestCase
             ->fillForm([
                 'name' => 'الباقة الاحترافية',
                 'badge' => 'الأكثر طلباً',
+                'pricing_type' => 'fixed',
                 'price' => 1200,
                 'duration_value' => 1,
                 'duration_unit' => 'year',
@@ -162,6 +163,58 @@ class SubscriptionPlansTest extends TestCase
 
         Livewire::test(ListSubscriptionPlans::class)->assertCanSeeTableRecords([$plan]);
         $this->assertSame(0, SalonSubscription::query()->count());
+    }
+
+    public function test_percentage_plan_is_listed_and_applied_on_signup(): void
+    {
+        $cut = CatalogService::query()->create(['category_id' => $this->men->id, 'name' => 'قص شعر', 'price' => 0]);
+        $plan = SubscriptionPlan::query()->create([
+            'name' => 'باقة الشراكة',
+            'name_en' => 'Partnership',
+            'pricing_type' => 'percentage',
+            'commission_percent' => 15,
+            'price' => 999,
+            'duration_value' => 1,
+            'duration_unit' => 'year',
+            'features' => ['نسبة مرنة'],
+            'terms' => "يُحتسب العمولة من كل حجز",
+            'is_active' => true,
+            'sort_order' => 20,
+        ]);
+
+        $this->assertSame(0.0, (float) $plan->fresh()->price);
+        $this->assertTrue($plan->fresh()->isPercentage());
+        $this->assertSame('عمولة 15% للتطبيق', $plan->fresh()->priceLabel());
+        $this->assertSame('15% app share', $plan->fresh()->priceLabel(true));
+
+        $this->getJson('/api/subscription-plans')
+            ->assertOk()
+            ->assertJsonFragment([
+                'id' => $plan->id,
+                'pricing_type' => 'percentage',
+                'commission_percent' => 15,
+                'is_percentage' => true,
+                'is_free' => false,
+                'price_label' => 'عمولة 15% للتطبيق',
+            ]);
+
+        $token = $this->postJson('/api/auth/register', $this->signup($cut) + [
+            'plan_id' => $plan->id,
+            'accept_terms' => true,
+        ])->assertCreated()->json('token');
+
+        $salon = Salon::query()->where('name', 'صالون جديد')->firstOrFail();
+        $subscription = $salon->currentSubscription()->first();
+        $this->assertSame('percentage', $subscription->pricing_type);
+        $this->assertSame(15.0, (float) $subscription->commission_percent);
+        $this->assertSame(0.0, (float) $subscription->price);
+
+        $this->withToken($token)->getJson('/api/salon/profile')
+            ->assertOk()
+            ->assertJsonPath('subscription.pricing_type', 'percentage')
+            ->assertJsonPath('subscription.commission_percent', 15)
+            ->assertJsonPath('subscription.is_percentage', true)
+            ->assertJsonPath('subscription.is_free', false);
     }
 
     private function signup(CatalogService $service): array

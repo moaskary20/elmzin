@@ -55,7 +55,9 @@ class SalonSubscriptionResource extends Resource
             }
             $start = Carbon::parse($get('starts_at') ?: now());
             $set('plan_name', $plan->name);
-            $set('price', (float) $plan->price);
+            $set('pricing_type', $plan->isPercentage() ? 'percentage' : 'fixed');
+            $set('price', $plan->isPercentage() ? 0 : (float) $plan->price);
+            $set('commission_percent', $plan->isPercentage() ? $plan->commissionPercent() : null);
             $set('ends_at', $plan->endsFrom($start)->format('Y-m-d H:i:s'));
         };
 
@@ -79,12 +81,29 @@ class SalonSubscriptionResource extends Resource
                         ->label('اسم الباقة وقت الاشتراك')
                         ->required()
                         ->maxLength(120),
+                    Select::make('pricing_type')
+                        ->label('نوع التسعير')
+                        ->options(SubscriptionPlan::PRICING_TYPES)
+                        ->default('fixed')
+                        ->live()
+                        ->selectablePlaceholder(false)
+                        ->required(),
                     TextInput::make('price')
                         ->label('المبلغ')
                         ->numeric()
                         ->minValue(0)
                         ->default(0)
-                        ->suffix('ج.م'),
+                        ->suffix('ج.م')
+                        ->visible(fn (Get $get): bool => $get('pricing_type') !== 'percentage'),
+                    TextInput::make('commission_percent')
+                        ->label('نسبة التطبيق')
+                        ->numeric()
+                        ->minValue(0.01)
+                        ->maxValue(100)
+                        ->step(0.01)
+                        ->suffix('%')
+                        ->visible(fn (Get $get): bool => $get('pricing_type') === 'percentage')
+                        ->required(fn (Get $get): bool => $get('pricing_type') === 'percentage'),
                     DateTimePicker::make('starts_at')
                         ->label('يبدأ في')
                         ->native(false)
@@ -128,8 +147,18 @@ class SalonSubscriptionResource extends Resource
                     ->badge()
                     ->color('warning'),
                 TextColumn::make('price')
-                    ->label('المبلغ')
-                    ->formatStateUsing(fn ($state): string => (float) $state <= 0 ? 'مجاناً' : number_format((float) $state).' ج.م'),
+                    ->label('المبلغ / النسبة')
+                    ->formatStateUsing(function (SalonSubscription $record): string {
+                        if ($record->isPercentage()) {
+                            $percent = rtrim(rtrim(number_format((float) ($record->commission_percent ?? 0), 2), '0'), '.');
+
+                            return 'عمولة '.$percent.'%';
+                        }
+
+                        return (float) $record->price <= 0
+                            ? 'مجاناً'
+                            : number_format((float) $record->price).' ج.م';
+                    }),
                 TextColumn::make('starts_at')
                     ->label('البداية')
                     ->date('Y-m-d')

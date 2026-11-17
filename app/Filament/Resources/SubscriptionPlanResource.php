@@ -15,6 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -83,14 +84,33 @@ class SubscriptionPlanResource extends Resource
                 ->columnSpanFull(),
             Section::make('السعر والمدة')
                 ->schema([
+                    Select::make('pricing_type')
+                        ->label('نوع التسعير')
+                        ->options(SubscriptionPlan::PRICING_TYPES)
+                        ->required()
+                        ->default('fixed')
+                        ->live()
+                        ->selectablePlaceholder(false)
+                        ->helperText('سعر ثابت للاشتراك، أو نسبة عمولة من حجوزات الصالون للتطبيق.'),
                     TextInput::make('price')
                         ->label('السعر')
                         ->numeric()
-                        ->required()
                         ->minValue(0)
                         ->default(0)
                         ->suffix('ج.م')
+                        ->required(fn (Get $get): bool => $get('pricing_type') !== 'percentage')
+                        ->visible(fn (Get $get): bool => $get('pricing_type') !== 'percentage')
                         ->helperText('اكتب 0 لتظهر الباقة «مجاناً».'),
+                    TextInput::make('commission_percent')
+                        ->label('نسبة التطبيق')
+                        ->numeric()
+                        ->minValue(0.01)
+                        ->maxValue(100)
+                        ->step(0.01)
+                        ->suffix('%')
+                        ->required(fn (Get $get): bool => $get('pricing_type') === 'percentage')
+                        ->visible(fn (Get $get): bool => $get('pricing_type') === 'percentage')
+                        ->helperText('مثال: 15 = للتطبيق 15% وللصالون 85% من قيمة الحجز.'),
                     TextInput::make('duration_value')
                         ->label('المدة')
                         ->numeric()
@@ -104,7 +124,7 @@ class SubscriptionPlanResource extends Resource
                         ->default('year')
                         ->selectablePlaceholder(false),
                 ])
-                ->columns(3)
+                ->columns(2)
                 ->columnSpanFull(),
             Section::make('مميزات الباقة')
                 ->schema([
@@ -180,11 +200,20 @@ class SubscriptionPlanResource extends Resource
                     ->badge()
                     ->color('warning')
                     ->placeholder('—'),
+                TextColumn::make('pricing_type')
+                    ->label('النوع')
+                    ->formatStateUsing(fn (SubscriptionPlan $record): string => $record->isPercentage() ? 'نسبة' : 'سعر')
+                    ->badge()
+                    ->color(fn (SubscriptionPlan $record): string => $record->isPercentage() ? 'info' : 'gray'),
                 TextColumn::make('price')
-                    ->label('السعر')
+                    ->label('السعر / النسبة')
                     ->formatStateUsing(fn (SubscriptionPlan $record): string => $record->priceLabel())
                     ->badge()
-                    ->color(fn (SubscriptionPlan $record): string => $record->isFree() ? 'success' : 'gray'),
+                    ->color(fn (SubscriptionPlan $record): string => match (true) {
+                        $record->isPercentage() => 'warning',
+                        $record->isFree() => 'success',
+                        default => 'gray',
+                    }),
                 TextColumn::make('duration_value')
                     ->label('المدة')
                     ->formatStateUsing(fn (SubscriptionPlan $record): string => $record->durationLabel()),

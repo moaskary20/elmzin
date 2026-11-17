@@ -21,6 +21,11 @@ class SubscriptionPlan extends Model
         'year' => 'year',
     ];
 
+    public const PRICING_TYPES = [
+        'fixed' => 'سعر ثابت',
+        'percentage' => 'نسبة عمولة',
+    ];
+
     protected $fillable = [
         'name',
         'name_en',
@@ -28,7 +33,9 @@ class SubscriptionPlan extends Model
         'tagline_en',
         'badge',
         'badge_en',
+        'pricing_type',
         'price',
+        'commission_percent',
         'duration_value',
         'duration_unit',
         'features',
@@ -46,6 +53,7 @@ class SubscriptionPlan extends Model
     {
         return [
             'price' => 'decimal:2',
+            'commission_percent' => 'decimal:2',
             'duration_value' => 'integer',
             'features' => 'array',
             'features_en' => 'array',
@@ -55,6 +63,20 @@ class SubscriptionPlan extends Model
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $plan): void {
+            if (($plan->pricing_type ?? 'fixed') === 'percentage') {
+                $plan->price = 0;
+                $plan->commission_percent = max(0, (float) ($plan->commission_percent ?? 0));
+            } else {
+                $plan->pricing_type = 'fixed';
+                $plan->commission_percent = null;
+                $plan->price = max(0, (float) ($plan->price ?? 0));
+            }
+        });
     }
 
     public function subscriptions(): HasMany
@@ -67,9 +89,23 @@ class SubscriptionPlan extends Model
         return $query->where('is_active', true)->orderBy('sort_order')->orderBy('id');
     }
 
+    public function isPercentage(): bool
+    {
+        return ($this->pricing_type ?? 'fixed') === 'percentage';
+    }
+
     public function isFree(): bool
     {
+        if ($this->isPercentage()) {
+            return false;
+        }
+
         return (float) $this->price <= 0;
+    }
+
+    public function commissionPercent(): float
+    {
+        return max(0, (float) ($this->commission_percent ?? 0));
     }
 
     public function durationLabel(bool $english = false): string
@@ -110,6 +146,17 @@ class SubscriptionPlan extends Model
 
     public function priceLabel(bool $english = false): string
     {
+        if ($this->isPercentage()) {
+            $percent = $this->commissionPercent();
+            $digits = floor($percent) == $percent
+                ? number_format($percent, 0)
+                : rtrim(rtrim(number_format($percent, 2), '0'), '.');
+
+            return $english
+                ? $digits.'% app share'
+                : 'عمولة '.$digits.'% للتطبيق';
+        }
+
         if ($this->isFree()) {
             return $english ? 'Free' : 'مجاناً';
         }
@@ -144,10 +191,13 @@ class SubscriptionPlan extends Model
             'tagline_en' => $this->tagline_en,
             'badge' => $this->badge,
             'badge_en' => $this->badge_en,
+            'pricing_type' => $this->isPercentage() ? 'percentage' : 'fixed',
             'price' => (float) $this->price,
+            'commission_percent' => $this->isPercentage() ? $this->commissionPercent() : null,
             'price_label' => $this->priceLabel(),
             'price_label_en' => $this->priceLabel(true),
             'is_free' => $this->isFree(),
+            'is_percentage' => $this->isPercentage(),
             'duration_value' => (int) $this->duration_value,
             'duration_unit' => $this->duration_unit,
             'duration_label' => $this->durationLabel(),

@@ -425,7 +425,7 @@ class _SalonManageScreenState extends State<SalonManageScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${sub.isFree ? 'اشتراك مجاني • ' : ''}ساري حتى ${sub.endsAt ?? ''}',
+                  '${sub.pricingSummary}ساري حتى ${sub.endsAt ?? ''}',
                   style: TextStyle(color: tone.muted, fontSize: 12.5),
                 ),
               ],
