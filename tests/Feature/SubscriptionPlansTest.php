@@ -51,8 +51,25 @@ class SubscriptionPlansTest extends TestCase
             ->assertJsonPath('data.0.price_label', 'مجاناً')
             ->assertJsonPath('data.0.duration_label', 'سنة واحدة')
             ->assertJsonPath('data.0.badge', 'مجاناً لمدة سنة')
+            ->assertJsonPath('data.0.image_url', null)
             ->assertJsonCount(5, 'data.0.features')
             ->assertJsonCount(5, 'data.0.terms');
+    }
+
+    public function test_plan_image_is_exposed_through_the_api(): void
+    {
+        $path = 'subscription-plans/test-plan.png';
+        \Illuminate\Support\Facades\Storage::fake('public');
+        \Illuminate\Support\Facades\Storage::disk('public')->put($path, 'fake-image');
+
+        $plan = SubscriptionPlan::query()->available()->firstOrFail();
+        $plan->update(['image' => $path]);
+
+        $this->getJson('/api/subscription-plans')
+            ->assertOk()
+            ->assertJsonPath('data.0.image_url', url('/api/subscription-plans/'.$plan->id.'/image'));
+
+        $this->get('/api/subscription-plans/'.$plan->id.'/image')->assertOk();
     }
 
     public function test_salon_signup_subscribes_to_the_chosen_plan_after_accepting_terms(): void

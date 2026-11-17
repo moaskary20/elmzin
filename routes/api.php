@@ -52,6 +52,7 @@ Route::get('/popup', [AppPopupController::class, 'show']);
 Route::get('/slides', [MobileSlideController::class, 'index']);
 Route::get('/slides/{slide}/image', [MobileSlideController::class, 'image']);
 Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index']);
+Route::get('/subscription-plans/{plan}/image', [SubscriptionPlanController::class, 'image']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/catalog', [CategoryController::class, 'catalog']);
 Route::get('/shop/catalog', [ShopController::class, 'catalog']);

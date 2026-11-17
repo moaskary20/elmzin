@@ -213,6 +213,7 @@ class _PlanCardState extends State<_PlanCard>
                           Container(
                             width: 46,
                             height: 46,
+                            clipBehavior: Clip.antiAlias,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
@@ -222,15 +223,29 @@ class _PlanCardState extends State<_PlanCard>
                                 ],
                               ),
                             ),
-                            child: Icon(
-                              plan.isPercentage
-                                  ? Icons.percent_rounded
-                                  : plan.isFree
-                                  ? Icons.workspace_premium_rounded
-                                  : Icons.diamond_outlined,
-                              color: tone.ink,
-                              size: 24,
-                            ),
+                            child: plan.imageUrl != null
+                                ? Image.network(
+                                    plan.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Icon(
+                                      plan.isPercentage
+                                          ? Icons.percent_rounded
+                                          : plan.isFree
+                                          ? Icons.workspace_premium_rounded
+                                          : Icons.diamond_outlined,
+                                      color: tone.ink,
+                                      size: 24,
+                                    ),
+                                  )
+                                : Icon(
+                                    plan.isPercentage
+                                        ? Icons.percent_rounded
+                                        : plan.isFree
+                                        ? Icons.workspace_premium_rounded
+                                        : Icons.diamond_outlined,
+                                    color: tone.ink,
+                                    size: 24,
+                                  ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(

@@ -8,6 +8,7 @@ use App\Filament\Resources\SubscriptionPlans\Pages\ListSubscriptionPlans;
 use App\Models\SubscriptionPlan;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -19,6 +20,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
@@ -72,6 +74,14 @@ class SubscriptionPlanResource extends Resource
                     TextInput::make('tagline_en')
                         ->label('وصف مختصر (EN)')
                         ->maxLength(255)
+                        ->columnSpanFull(),
+                    FileUpload::make('image')
+                        ->label('صورة الباقة')
+                        ->image()
+                        ->disk('public')
+                        ->directory('subscription-plans')
+                        ->imageEditor()
+                        ->helperText('تظهر في بطاقة الباقة داخل تطبيق الموبايل. يُفضّل صورة مربعة واضحة.')
                         ->columnSpanFull(),
                     Toggle::make('is_active')
                         ->label('ظاهرة في التطبيق')
@@ -190,6 +200,12 @@ class SubscriptionPlanResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('image')
+                    ->label('الصورة')
+                    ->disk('public')
+                    ->height(48)
+                    ->circular()
+                    ->defaultImageUrl(null),
                 TextColumn::make('name')
                     ->label('الباقة')
                     ->description(fn (SubscriptionPlan $record): ?string => $record->tagline)

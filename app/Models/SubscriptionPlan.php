@@ -6,6 +6,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class SubscriptionPlan extends Model
 {
@@ -33,6 +34,7 @@ class SubscriptionPlan extends Model
         'tagline_en',
         'badge',
         'badge_en',
+        'image',
         'pricing_type',
         'price',
         'commission_percent',
@@ -106,6 +108,20 @@ class SubscriptionPlan extends Model
     public function commissionPercent(): float
     {
         return max(0, (float) ($this->commission_percent ?? 0));
+    }
+
+    public function hasImage(): bool
+    {
+        return filled($this->image) && Storage::disk('public')->exists($this->image);
+    }
+
+    public function imageUrl(): ?string
+    {
+        if (! $this->hasImage()) {
+            return null;
+        }
+
+        return url('/api/subscription-plans/'.$this->id.'/image');
     }
 
     public function durationLabel(bool $english = false): string
@@ -191,6 +207,7 @@ class SubscriptionPlan extends Model
             'tagline_en' => $this->tagline_en,
             'badge' => $this->badge,
             'badge_en' => $this->badge_en,
+            'image_url' => $this->imageUrl(),
             'pricing_type' => $this->isPercentage() ? 'percentage' : 'fixed',
             'price' => (float) $this->price,
             'commission_percent' => $this->isPercentage() ? $this->commissionPercent() : null,

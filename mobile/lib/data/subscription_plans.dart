@@ -18,6 +18,7 @@ class SubscriptionPlan {
     this.taglineEn,
     this.badge,
     this.badgeEn,
+    this.imageUrl,
     this.pricingType = 'fixed',
     this.price = 0,
     this.commissionPercent,
@@ -55,6 +56,7 @@ class SubscriptionPlan {
       taglineEn: text(json['tagline_en']),
       badge: text(json['badge']),
       badgeEn: text(json['badge_en']),
+      imageUrl: text(json['image_url']),
       pricingType: isPercentage ? 'percentage' : 'fixed',
       price: (json['price'] as num?)?.toDouble() ?? 0,
       commissionPercent: (json['commission_percent'] as num?)?.toDouble(),
@@ -83,6 +85,7 @@ class SubscriptionPlan {
   final String? taglineEn;
   final String? badge;
   final String? badgeEn;
+  final String? imageUrl;
   final String pricingType;
   final double price;
   final double? commissionPercent;
