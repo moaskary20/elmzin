@@ -202,52 +202,64 @@ class _PlanCardState extends State<_PlanCard>
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (plan.imageUrl != null)
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Image.network(
+                          plan.imageUrl!,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: gold.withValues(alpha: 0.15),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              color: tone.muted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        plan.imageUrl != null ? 16 : 20,
+                        20,
+                        14,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  gold,
-                                  Color.lerp(gold, Colors.white, 0.35)!,
-                                ],
+                          if (plan.imageUrl == null)
+                            Container(
+                              width: 46,
+                              height: 46,
+                              margin: const EdgeInsetsDirectional.only(end: 12),
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    gold,
+                                    Color.lerp(gold, Colors.white, 0.35)!,
+                                  ],
+                                ),
+                              ),
+                              child: Icon(
+                                plan.isPercentage
+                                    ? Icons.percent_rounded
+                                    : plan.isFree
+                                    ? Icons.workspace_premium_rounded
+                                    : Icons.diamond_outlined,
+                                color: tone.ink,
+                                size: 24,
                               ),
                             ),
-                            child: plan.imageUrl != null
-                                ? Image.network(
-                                    plan.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Icon(
-                                      plan.isPercentage
-                                          ? Icons.percent_rounded
-                                          : plan.isFree
-                                          ? Icons.workspace_premium_rounded
-                                          : Icons.diamond_outlined,
-                                      color: tone.ink,
-                                      size: 24,
-                                    ),
-                                  )
-                                : Icon(
-                                    plan.isPercentage
-                                        ? Icons.percent_rounded
-                                        : plan.isFree
-                                        ? Icons.workspace_premium_rounded
-                                        : Icons.diamond_outlined,
-                                    color: tone.ink,
-                                    size: 24,
-                                  ),
-                          ),
-                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,8 +445,10 @@ class _PlanCardState extends State<_PlanCard>
                           ),
                         ),
                       ],
-                    ],
-                  ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
