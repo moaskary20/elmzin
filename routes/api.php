@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SalonController;
 use App\Http\Controllers\Api\SalonProfileController;
 use App\Http\Controllers\Api\ShopController;
 use App\Http\Controllers\Api\SubscriptionPlanController;
+use App\Http\Controllers\Api\SupportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -49,6 +50,8 @@ Route::delete('/salon/specialists/{specialist}', [SalonProfileController::class,
 Route::get('/users/{user}/avatar', [AccountController::class, 'avatarFile']);
 Route::get('/pages', [AppPageController::class, 'index']);
 Route::get('/popup', [AppPopupController::class, 'show']);
+Route::get('/support/form', [SupportController::class, 'form']);
+Route::post('/support/tickets', [SupportController::class, 'store']);
 Route::get('/slides', [MobileSlideController::class, 'index']);
 Route::get('/slides/{slide}/image', [MobileSlideController::class, 'image']);
 Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index']);

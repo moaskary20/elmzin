@@ -7,6 +7,7 @@ import 'info_screen.dart';
 import 'login_screen.dart';
 import 'loyalty_screen.dart';
 import 'profile_edit_screen.dart';
+import 'support_contact_screen.dart';
 import 'wallet_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -36,6 +37,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _login() => _push(const LoginScreen());
+
+  void _contactSupport() {
+    if (!AccountStore.instance.loggedIn) {
+      _login();
+      return;
+    }
+    _push(const SupportContactScreen());
+  }
 
   void _push(Widget page) {
     final direction = Directionality.of(context);
@@ -218,6 +227,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.support_agent_rounded,
                   label: english ? 'Help center' : 'مركز المساعدة',
                   onTap: () => _open(const InfoScreen.help()),
+                ),
+                _row(
+                  tone: tone,
+                  key: const Key('settings-contact-support'),
+                  icon: Icons.mail_outline_rounded,
+                  label: english ? 'Contact support' : 'مراسلة الدعم',
+                  onTap: _contactSupport,
                 ),
                 _row(
                   tone: tone,
