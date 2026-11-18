@@ -328,20 +328,70 @@ h2 {
 .fi-fo-textarea,
 textarea,
 select,
-input {
+input:not([type='checkbox']):not([type='radio']) {
     background: #070707 !important;
     color: var(--mz-gold) !important;
     border-color: var(--mz-line) !important;
     transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
 }
 
-input:focus,
+input:not([type='checkbox']):not([type='radio']):focus,
 textarea:focus,
 select:focus,
 .fi-input:focus,
 .fi-select-input:focus {
     border-color: var(--mz-gold) !important;
     box-shadow: 0 0 0 3px rgba(217, 178, 91, 0.18) !important;
+}
+
+/* Keep checkbox/radio ticks visible on the dark gold theme. */
+input[type='checkbox'].fi-checkbox-input,
+input[type='checkbox'],
+.fi-checkbox-input {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 1.05rem !important;
+    height: 1.05rem !important;
+    min-width: 1.05rem !important;
+    min-height: 1.05rem !important;
+    margin: 0 !important;
+    background-color: #070707 !important;
+    background-image: none !important;
+    border: 1px solid var(--mz-line) !important;
+    border-radius: 0.3rem !important;
+    color: #ffffff !important;
+    accent-color: var(--mz-gold) !important;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+input[type='checkbox'].fi-checkbox-input:checked,
+input[type='checkbox']:checked,
+.fi-checkbox-input:checked {
+    background-color: var(--mz-gold) !important;
+    border-color: var(--mz-gold) !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 16 16' fill='%23ffffff' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z'/%3E%3C/svg%3E") !important;
+    background-size: 100% 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    color: #ffffff !important;
+}
+
+input[type='checkbox'].fi-checkbox-input:indeterminate,
+input[type='checkbox']:indeterminate,
+.fi-checkbox-input:indeterminate {
+    background-color: var(--mz-gold) !important;
+    border-color: var(--mz-gold) !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 16 16' fill='%23ffffff' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4.5 6.75a1.25 1.25 0 0 0 0 2.5h7a1.25 1.25 0 0 0 0-2.5h-7z'/%3E%3C/svg%3E") !important;
+    background-size: 100% 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    color: #ffffff !important;
+}
+
+input[type='radio'] {
+    accent-color: var(--mz-gold) !important;
+    color: #ffffff !important;
 }
 
 .fi-btn {
