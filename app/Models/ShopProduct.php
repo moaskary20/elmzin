@@ -10,6 +10,7 @@ class ShopProduct extends Model
 {
     protected $fillable = [
         'shop_category_id',
+        'user_id',
         'name',
         'name_en',
         'description',
@@ -38,8 +39,18 @@ class ShopProduct extends Model
         return $this->belongsTo(ShopCategory::class, 'shop_category_id');
     }
 
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function orderItems(): HasMany
     {
         return $this->hasMany(ShopOrderItem::class);
+    }
+
+    public function sellerName(): ?string
+    {
+        return $this->seller?->name;
     }
 }

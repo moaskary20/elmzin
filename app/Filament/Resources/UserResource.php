@@ -192,6 +192,7 @@ class UserResource extends Resource
                     ->options([
                         UserRole::Customer->value => 'عميل',
                         UserRole::Salon->value => 'صالون',
+                        UserRole::Seller->value => 'بائع',
                     ]),
                 SelectFilter::make('is_active')
                     ->label('الحالة')
@@ -213,7 +214,7 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->whereIn('role', [UserRole::Customer, UserRole::Salon])
+            ->whereIn('role', [UserRole::Customer, UserRole::Salon, UserRole::Seller])
             ->withCount('bookings');
     }
 

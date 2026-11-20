@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\BookingStatus;
 use App\Enums\LoyaltyTransactionType;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\LoyaltySetting;
 use App\Models\LoyaltyTransaction;
 use App\Models\Review;
 use App\Models\SalonMedia;
+use App\Models\SellerProfile;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Services\Notifier;
@@ -345,6 +347,93 @@ class AccountController extends Controller
                 'health_certificate' => true,
             ],
         ]);
+    }
+
+    public function sellerProfile(Request $request): JsonResponse
+    {
+        $user = $this->seller($request);
+        $profile = $user->sellerProfile;
+        $subscription = $user->activeSellerSubscription();
+
+        return response()->json([
+            'data' => [
+                'name' => $user->name,
+                'national_id' => $profile?->national_id,
+                'has_national_id_image' => (bool) $profile?->hasNationalIdImage(),
+                'has_commercial_register_image' => (bool) $profile?->hasCommercialRegisterImage(),
+                'verification_status' => $profile?->verification_status?->value ?? 'pending',
+                'subscription' => $subscription?->toApiArray(),
+            ],
+        ]);
+    }
+
+    public function sellerNationalId(Request $request): JsonResponse
+    {
+        $profile = $this->sellerProfileRecord($request);
+
+        $request->validate([
+            'image' => ['required', 'image', 'max:6144'],
+        ], [
+            'image.required' => 'ارفع صورة البطاقة الشخصية.',
+            'image.image' => 'الملف يجب أن يكون صورة.',
+            'image.max' => 'حجم الصورة كبير، الحد ٦ ميجابايت.',
+        ]);
+
+        if ($profile->national_id_image) {
+            Storage::disk('public')->delete($profile->national_id_image);
+        }
+
+        $profile->national_id_image = $request->file('image')->store('sellers/national-id', 'public');
+        $profile->save();
+
+        return response()->json([
+            'data' => [
+                'has_national_id_image' => true,
+            ],
+        ]);
+    }
+
+    public function sellerCommercialRegister(Request $request): JsonResponse
+    {
+        $profile = $this->sellerProfileRecord($request);
+
+        $request->validate([
+            'image' => ['required', 'image', 'max:6144'],
+        ], [
+            'image.required' => 'ارفع صورة السجل التجاري.',
+            'image.image' => 'الملف يجب أن يكون صورة.',
+            'image.max' => 'حجم الصورة كبير، الحد ٦ ميجابايت.',
+        ]);
+
+        if ($profile->commercial_register_image) {
+            Storage::disk('public')->delete($profile->commercial_register_image);
+        }
+
+        $profile->commercial_register_image = $request->file('image')->store('sellers/commercial-register', 'public');
+        $profile->save();
+
+        return response()->json([
+            'data' => [
+                'has_commercial_register_image' => true,
+            ],
+        ]);
+    }
+
+    private function seller(Request $request): User
+    {
+        $user = $this->account($request);
+        abort_unless($user->role === UserRole::Seller, 403, 'هذا الحساب ليس بائعاً.');
+
+        return $user;
+    }
+
+    private function sellerProfileRecord(Request $request): SellerProfile
+    {
+        $user = $this->seller($request);
+        $profile = $user->sellerProfile;
+        abort_if($profile === null, 404, 'ملف البائع غير موجود.');
+
+        return $profile;
     }
 
     public function avatarFile(User $user): BinaryFileResponse

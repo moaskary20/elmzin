@@ -57,6 +57,17 @@ class ShopProductResource extends Resource
                         ->searchable()
                         ->preload()
                         ->native(false),
+                    Select::make('user_id')
+                        ->label('البائع')
+                        ->relationship(
+                            'seller',
+                            'name',
+                            fn ($query) => $query->where('role', 'seller'),
+                        )
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
+                        ->helperText('اتركه فارغاً لمنتج يخص المنصة مباشرة.'),
                     TextInput::make('name')
                         ->label('اسم المنتج (عربي)')
                         ->required()
@@ -125,6 +136,10 @@ class ShopProductResource extends Resource
                     ->label('القسم')
                     ->badge()
                     ->sortable(),
+                TextColumn::make('seller.name')
+                    ->label('البائع')
+                    ->placeholder('المنصة')
+                    ->toggleable(),
                 TextColumn::make('price')
                     ->label('السعر')
                     ->money('EGP')
@@ -142,6 +157,13 @@ class ShopProductResource extends Resource
                 SelectFilter::make('shop_category_id')
                     ->label('القسم')
                     ->relationship('category', 'name'),
+                SelectFilter::make('user_id')
+                    ->label('البائع')
+                    ->relationship(
+                        'seller',
+                        'name',
+                        fn ($query) => $query->where('role', 'seller'),
+                    ),
             ])
             ->recordActions([
                 EditAction::make(),

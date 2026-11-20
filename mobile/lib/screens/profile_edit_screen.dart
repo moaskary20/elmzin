@@ -6,6 +6,7 @@ import '../theme/settings_tone.dart';
 import '../theme/system_bars.dart';
 import '../widgets/account_avatar.dart';
 import 'salon_manage_screen.dart';
+import 'seller_products_screen.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -138,6 +139,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             const SizedBox(height: 22),
             _salonCard(tone, english),
           ],
+          if (AccountStore.instance.role == 'seller') ...[
+            const SizedBox(height: 22),
+            _sellerCard(tone, english),
+          ],
           const SizedBox(height: 28),
           FilledButton(
             key: const Key('profile-save'),
@@ -215,6 +220,78 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       english
                           ? 'Details, services and prices, team, and hours'
                           : 'البيانات، الخدمات والأسعار، الأخصائيون، ومواعيد العمل',
+                      style: TextStyle(color: tone.muted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                english
+                    ? Icons.chevron_right_rounded
+                    : Icons.chevron_left_rounded,
+                color: tone.accent,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sellerCard(SettingsTone tone, bool english) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: const Key('profile-seller-products'),
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => Directionality(
+              textDirection: Directionality.of(context),
+              child: const SellerProductsScreen(),
+            ),
+          ),
+        ),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: AlignmentDirectional.centerStart,
+              end: AlignmentDirectional.centerEnd,
+              colors: [tone.accent.withValues(alpha: 0.18), tone.panel],
+            ),
+            border: Border.all(color: tone.accent.withValues(alpha: 0.6)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: tone.accent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(Icons.shopping_bag_outlined, color: tone.ink),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      english ? 'Manage your products' : 'إدارة المنتجات',
+                      style: TextStyle(
+                        color: tone.accent,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      english
+                          ? 'Add, edit, and stock your shop products'
+                          : 'أضف وعدّل منتجاتك ومخزونها في المتجر',
                       style: TextStyle(color: tone.muted, fontSize: 12),
                     ),
                   ],

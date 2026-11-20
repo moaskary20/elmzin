@@ -35,6 +35,12 @@ class AccountApi {
   static Future<void> Function({required String token, required String path})
   uploadHealthCertificate = _uploadHealthCertificate;
 
+  static Future<void> Function({required String token, required String path})
+  uploadSellerNationalId = _uploadSellerNationalId;
+
+  static Future<void> Function({required String token, required String path})
+  uploadSellerCommercialRegister = _uploadSellerCommercialRegister;
+
   static void useDefaults() {
     show = _show;
     update = _update;
@@ -42,6 +48,8 @@ class AccountApi {
     uploadSalonImage = _uploadSalonImage;
     uploadSalonMedia = _uploadSalonMedia;
     uploadHealthCertificate = _uploadHealthCertificate;
+    uploadSellerNationalId = _uploadSellerNationalId;
+    uploadSellerCommercialRegister = _uploadSellerCommercialRegister;
   }
 
   static Future<void> _uploadSalonImage({
@@ -101,6 +109,50 @@ class AccountApi {
     final response = await request.send().timeout(const Duration(seconds: 30));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AuthException('تعذر رفع الشهادة الصحية.');
+    }
+  }
+
+  static Future<void> _uploadSellerNationalId({
+    required String token,
+    required String path,
+  }) async {
+    await _uploadSellerDoc(
+      token: token,
+      path: path,
+      endpoint: '/api/account/seller/national-id',
+      error: 'تعذر رفع صورة البطاقة الشخصية.',
+    );
+  }
+
+  static Future<void> _uploadSellerCommercialRegister({
+    required String token,
+    required String path,
+  }) async {
+    await _uploadSellerDoc(
+      token: token,
+      path: path,
+      endpoint: '/api/account/seller/commercial-register',
+      error: 'تعذر رفع صورة السجل التجاري.',
+    );
+  }
+
+  static Future<void> _uploadSellerDoc({
+    required String token,
+    required String path,
+    required String endpoint,
+    required String error,
+  }) async {
+    if (!File(path).existsSync()) return;
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${SlidesApi.baseUrl}$endpoint'),
+    );
+    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath('image', path));
+    final response = await request.send().timeout(const Duration(seconds: 30));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw AuthException(error);
     }
   }
 

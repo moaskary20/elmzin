@@ -20,6 +20,7 @@ class ShopProduct {
     this.categoryNameEn,
     this.compareAtPrice,
     this.imageUrl,
+    this.sellerName,
   });
 
   final int id;
@@ -35,6 +36,7 @@ class ShopProduct {
   final String? categoryNameEn;
   final String categorySlug;
   final String? imageUrl;
+  final String? sellerName;
 
   String nameFor(bool english) => localized(name, nameEn, english);
 
@@ -69,6 +71,11 @@ class ShopProduct {
       categoryNameEn: category['name_en'] as String?,
       categorySlug: '${category['slug'] ?? ''}',
       imageUrl: row['image_url'] as String?,
+      sellerName: () {
+        final seller = (row['seller_name'] as String?)?.trim();
+        if (seller == null || seller.isEmpty) return null;
+        return seller;
+      }(),
     );
   }
 

@@ -160,9 +160,34 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(Salon::class);
     }
 
+    public function sellerProfile(): HasOne
+    {
+        return $this->hasOne(SellerProfile::class);
+    }
+
+    public function sellerSubscriptions(): HasMany
+    {
+        return $this->hasMany(SellerSubscription::class);
+    }
+
+    public function activeSellerSubscription(): ?SellerSubscription
+    {
+        return $this->sellerSubscriptions()->current()->latest('id')->first();
+    }
+
+    public function shopProducts(): HasMany
+    {
+        return $this->hasMany(ShopProduct::class);
+    }
+
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function scopeSellers(Builder $query): Builder
+    {
+        return $query->where('role', UserRole::Seller);
     }
 
     public static function findByBearer(?string $plain): ?self

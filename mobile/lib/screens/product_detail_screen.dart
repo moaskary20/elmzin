@@ -214,6 +214,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               fontFamily: 'Cairo',
                             ),
                           ),
+                          if (product.sellerName != null &&
+                              product.sellerName!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              english
+                                  ? 'Seller: ${product.sellerName}'
+                                  : 'البائع: ${product.sellerName}',
+                              style: TextStyle(
+                                color: AppColors.goldSoft,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           _PriceBlock(
                             english: english,

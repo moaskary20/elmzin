@@ -9,6 +9,7 @@ enum UserRole: string implements HasLabel
     case Admin = 'admin';
     case Customer = 'customer';
     case Salon = 'salon';
+    case Seller = 'seller';
 
     public function getLabel(): string
     {
@@ -16,6 +17,7 @@ enum UserRole: string implements HasLabel
             self::Admin => 'مدير',
             self::Customer => 'عميل',
             self::Salon => 'صالون',
+            self::Seller => 'بائع',
         };
     }
 }

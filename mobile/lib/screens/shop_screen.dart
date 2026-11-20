@@ -278,7 +278,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.72,
+                  childAspectRatio: 0.68,
                 ),
                 itemBuilder: (context, index) {
                   final product = products[index];
@@ -488,6 +488,22 @@ class _ProductCard extends StatelessWidget {
                         height: 1.25,
                       ),
                     ),
+                    if (product.sellerName != null &&
+                        product.sellerName!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        english
+                            ? 'Seller: ${product.sellerName}'
+                            : 'البائع: ${product.sellerName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.goldSoft,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Row(
                       children: [

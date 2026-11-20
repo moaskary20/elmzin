@@ -23,6 +23,7 @@ class ShopController extends Controller
             ->where('is_active', true)
             ->with(['products' => fn ($query) => $query
                 ->where('is_active', true)
+                ->with('seller:id,name')
                 ->orderBy('sort_order')
                 ->orderBy('id')])
             ->orderBy('sort_order')
@@ -46,7 +47,7 @@ class ShopController extends Controller
     {
         $products = ShopProduct::query()
             ->where('is_active', true)
-            ->with('category:id,name,name_en,slug')
+            ->with(['category:id,name,name_en,slug', 'seller:id,name'])
             ->when(
                 $request->filled('category_id'),
                 fn ($query) => $query->where('shop_category_id', (int) $request->integer('category_id')),
@@ -62,7 +63,7 @@ class ShopController extends Controller
     public function show(Request $request, ShopProduct $product): JsonResponse
     {
         abort_unless($product->is_active, 404);
-        $product->load('category:id,name,name_en,slug');
+        $product->load(['category:id,name,name_en,slug', 'seller:id,name']);
 
         return response()->json([
             'data' => $this->productPayload($request, $product, $product->category),
@@ -200,6 +201,7 @@ class ShopController extends Controller
             'compare_at_price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : null,
             'stock' => (int) $product->stock,
             'image_url' => $this->productImageUrl($request, $product),
+            'seller_name' => $product->sellerName(),
             'category' => [
                 'id' => $category?->id ?? $product->shop_category_id,
                 'name' => $category?->name ?? '',

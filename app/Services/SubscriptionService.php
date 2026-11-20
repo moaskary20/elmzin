@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Salon;
 use App\Models\SalonSubscription;
+use App\Models\SellerSubscription;
 use App\Models\SubscriptionPlan;
+use App\Models\User;
 use Carbon\CarbonInterface;
 
 class SubscriptionService
@@ -39,6 +41,35 @@ class SubscriptionService
         $start = $current?->ends_at && $current->ends_at->isFuture() ? $current->ends_at : now();
 
         return $this->subscribe($salon, $plan, $start, true);
+    }
+
+    public function subscribeSeller(
+        User $seller,
+        SubscriptionPlan $plan,
+        ?CarbonInterface $startsAt = null,
+        bool $termsAccepted = false,
+    ): SellerSubscription {
+        $start = $startsAt ?? now();
+
+        return $seller->sellerSubscriptions()->create([
+            'subscription_plan_id' => $plan->id,
+            'plan_name' => $plan->name,
+            'pricing_type' => $plan->isPercentage() ? 'percentage' : 'fixed',
+            'price' => $plan->isPercentage() ? 0 : $plan->price,
+            'commission_percent' => $plan->isPercentage() ? $plan->commissionPercent() : null,
+            'starts_at' => $start,
+            'ends_at' => $plan->endsFrom($start),
+            'status' => 'active',
+            'terms_accepted_at' => $termsAccepted ? now() : null,
+        ]);
+    }
+
+    public function renewSeller(User $seller, SubscriptionPlan $plan): SellerSubscription
+    {
+        $current = $seller->sellerSubscriptions()->current()->latest('ends_at')->first();
+        $start = $current?->ends_at && $current->ends_at->isFuture() ? $current->ends_at : now();
+
+        return $this->subscribeSeller($seller, $plan, $start, true);
     }
 
     public function limitReached(Salon $salon, string $what): ?string

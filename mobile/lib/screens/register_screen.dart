@@ -72,6 +72,47 @@ enum _SalonStep {
   String hint(bool english) => english ? hintEn : hintAr;
 }
 
+enum _SellerStep {
+  plan(
+    'اختر باقة الاشتراك',
+    'Choose a subscription plan',
+    'اشترك لنشر منتجاتك في متجر المزين.',
+    'Subscribe to publish products in Al-Muzayyin shop.',
+    Icons.workspace_premium_outlined,
+  ),
+  documents(
+    'الوثائق المطلوبة',
+    'Required documents',
+    'ارفع البطاقة الشخصية والسجل التجاري.',
+    'Upload your national ID and commercial register.',
+    Icons.badge_outlined,
+  ),
+  details(
+    'بيانات البائع',
+    'Seller details',
+    'الاسم وبيانات التواصل والعنوان.',
+    'Name, contact details, and address.',
+    Icons.storefront_outlined,
+  );
+
+  const _SellerStep(
+    this.titleAr,
+    this.titleEn,
+    this.hintAr,
+    this.hintEn,
+    this.icon,
+  );
+
+  final String titleAr;
+  final String titleEn;
+  final String hintAr;
+  final String hintEn;
+  final IconData icon;
+
+  String title(bool english) => english ? titleEn : titleAr;
+  String hint(bool english) => english ? hintEn : hintAr;
+}
+
 class _TeamMember {
   final name = TextEditingController();
   final nameEn = TextEditingController();
@@ -224,6 +265,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final List<String> _salonPhotos = [];
   String? _salonVideo;
   String? _healthCertificate;
+  String? _nationalIdImage;
+  String? _commercialRegisterImage;
   final _nationalId = TextEditingController();
 
   List<CatalogCategory> get _selectedCategories {
@@ -239,15 +282,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _chooseHealthCertificate() => _pickInto('health');
 
+  Future<void> _chooseNationalIdImage() => _pickInto('national_id');
+
+  Future<void> _chooseCommercialRegisterImage() =>
+      _pickInto('commercial_register');
+
   Future<void> _pickInto(String target) async {
     final current = switch (target) {
       'health' => _healthCertificate,
+      'national_id' => _nationalIdImage,
+      'commercial_register' => _commercialRegisterImage,
       _ => _photo,
     };
     void put(String? path) => setState(() {
       switch (target) {
         case 'health':
           _healthCertificate = path;
+        case 'national_id':
+          _nationalIdImage = path;
+        case 'commercial_register':
+          _commercialRegisterImage = path;
         default:
           _photo = path;
       }
@@ -675,8 +729,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       _type = type;
       _error = null;
+      _page = 0;
       if (type == 'salon' && _categories == null) _loadCatalog();
-      if (type == 'salon' && _plansFuture == null) _loadPlans();
+      if ((type == 'salon' || type == 'seller') && _plansFuture == null) {
+        _loadPlans();
+      }
     });
   }
 
@@ -736,6 +793,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   _SalonStep? get _current =>
       _type == 'salon' && _page > 0 ? _SalonStep.values[_page - 1] : null;
+
+  _SellerStep? get _sellerCurrent =>
+      _type == 'seller' && _page > 0 ? _SellerStep.values[_page - 1] : null;
 
   Map<int, double>? _servicePrices() {
     final prices = <int, double>{};
@@ -803,6 +863,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
+  String? _checkSeller(_SellerStep step) {
+    switch (step) {
+      case _SellerStep.plan:
+        if (_plansLoading) {
+          return _t('انتظر تحميل الباقات.', 'Wait for plans to load.');
+        }
+        if (_plan == null) {
+          return _t('اختر باقة الاشتراك.', 'Choose a subscription plan.');
+        }
+        if (_plan!.terms.isNotEmpty && !_terms) {
+          return _t(
+            'يجب الموافقة على قوانين الاشتراك أولاً.',
+            'Please accept the subscription terms first.',
+          );
+        }
+        return null;
+      case _SellerStep.documents:
+        final nationalId = _normalizeDigits(_nationalId.text).trim();
+        if (!RegExp(r'^\d{14}$').hasMatch(nationalId)) {
+          return _t(
+            'أدخل رقم البطاقة الشخصية ١٤ رقماً.',
+            'Enter the 14-digit national ID.',
+          );
+        }
+        if (_nationalIdImage == null) {
+          return _t('ارفع صورة البطاقة الشخصية.', 'Upload the national ID photo.');
+        }
+        if (_commercialRegisterImage == null) {
+          return _t(
+            'ارفع صورة السجل التجاري.',
+            'Upload the commercial register photo.',
+          );
+        }
+        return null;
+      case _SellerStep.details:
+        return _checkDetails();
+    }
+  }
+
   String? _checkDetails() {
     if (_type == 'salon' &&
         _salonPhotos.isEmpty &&
@@ -812,7 +911,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_type == 'salon' && _healthCertificate == null) {
       return _t('ارفع صورة الشهادة الصحية.', 'Upload the health certificate photo.');
     }
-    if (_type == 'salon') {
+    if (_type == 'salon' || _type == 'seller') {
       final nationalId = _normalizeDigits(_nationalId.text).trim();
       if (!RegExp(r'^\d{14}$').hasMatch(nationalId)) {
         return _t('أدخل رقم البطاقة الشخصية ١٤ رقماً.', 'Enter the 14-digit national ID.');
@@ -839,7 +938,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _next() {
-    if (_busy || _type != 'salon') return;
+    if (_busy) return;
+    if (_type == 'seller') {
+      final step = _sellerCurrent;
+      if (step == null) {
+        _go(1);
+        return;
+      }
+      final error = _checkSeller(step);
+      if (error != null) {
+        setState(() => _error = error);
+        return;
+      }
+      if (step == _SellerStep.details) {
+        _submit();
+        return;
+      }
+      _go(_page + 1);
+      return;
+    }
+    if (_type != 'salon') return;
     final step = _current;
     if (step == null) {
       _go(1);
@@ -864,9 +982,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _submit() async {
     if (_busy || _type == null) return;
     final salon = _type == 'salon';
+    final seller = _type == 'seller';
     if (salon) {
       for (final step in _SalonStep.values) {
         final error = _check(step);
+        if (error != null) {
+          setState(() {
+            _page = step.index + 1;
+            _error = error;
+          });
+          return;
+        }
+      }
+    } else if (seller) {
+      for (final step in _SellerStep.values) {
+        final error = _checkSeller(step);
         if (error != null) {
           setState(() {
             _page = step.index + 1;
@@ -882,7 +1012,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
     }
-    final plan = salon ? _plan : null;
+    final plan = (salon || seller) ? _plan : null;
     final address = _address!;
 
     setState(() {
@@ -908,7 +1038,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         locale: AccountStore.instance.locale == 'en' ? 'en' : 'ar',
         categoryId: salon ? _categoryIds.first : null,
         categoryIds: salon ? List<int>.from(_categoryIds) : null,
-        nationalId: salon ? _normalizeDigits(_nationalId.text).trim() : null,
+        nationalId: (salon || seller)
+            ? _normalizeDigits(_nationalId.text).trim()
+            : null,
         servicePrices: salon ? _servicePrices()! : const {},
         planId: plan?.id,
         acceptTerms: _terms,
@@ -968,6 +1100,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ).catchError((_) {}),
         );
       }
+      if (seller && session.token.isNotEmpty) {
+        final nationalImage = _nationalIdImage;
+        final commercialImage = _commercialRegisterImage;
+        if (nationalImage != null) {
+          unawaited(
+            AccountApi.uploadSellerNationalId(
+              token: session.token,
+              path: nationalImage,
+            ).catchError((_) {}),
+          );
+        }
+        if (commercialImage != null) {
+          unawaited(
+            AccountApi.uploadSellerCommercialRegister(
+              token: session.token,
+              path: commercialImage,
+            ).catchError((_) {}),
+          );
+        }
+      }
       if (plan != null) {
         await showSubscriptionWelcome(
           context,
@@ -992,13 +1144,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final tone = SettingsTone.of(AccountStore.instance.darkMode);
     final salon = _type == 'salon';
+    final seller = _type == 'seller';
     final step = _current;
+    final sellerStep = _sellerCurrent;
+    final inWizard = step != null || sellerStep != null;
 
     final english = AccountStore.instance.isEnglish;
     return Directionality(
       textDirection: english ? TextDirection.ltr : TextDirection.rtl,
       child: PopScope(
-        canPop: step == null,
+        canPop: !inWizard,
         onPopInvokedWithResult: (didPop, _) {
           if (!didPop) _back();
         },
@@ -1008,10 +1163,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             backgroundColor: tone.background,
             foregroundColor: tone.text,
             elevation: 0,
-            title: step == null
+            title: !inWizard
                 ? null
                 : Text(
-                    _t('تسجيل مركز تجميل', 'Beauty center signup'),
+                    seller
+                        ? _t('تسجيل بائع', 'Seller signup')
+                        : _t('تسجيل مركز تجميل', 'Beauty center signup'),
                     style: TextStyle(
                       color: tone.text,
                       fontSize: 17,
@@ -1029,6 +1186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           body: Column(
             children: [
               if (step != null) _progress(tone, step),
+              if (sellerStep != null) _sellerProgress(tone, sellerStep),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 280),
@@ -1046,13 +1204,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   child: KeyedSubtree(
                     key: ValueKey('register-page-$_page-$_type'),
-                    child: step == null
+                    child: !inWizard
                         ? _typePage(tone)
-                        : _stepPage(tone, step),
+                        : seller
+                        ? _sellerStepPage(tone, sellerStep!)
+                        : _stepPage(tone, step!),
                   ),
                 ),
               ),
               if (salon) _bottomBar(tone, step),
+              if (seller) _sellerBottomBar(tone, sellerStep),
             ],
           ),
         ),
@@ -1104,6 +1265,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        _choice(
+          tone,
+          key: const Key('register-seller'),
+          type: 'seller',
+          label: _t('بائع', 'Seller'),
+          icon: Icons.shopping_bag_outlined,
+        ),
         AnimatedSize(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
@@ -1130,10 +1299,76 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
             'salon' => _salonIntro(tone),
+            'seller' => _sellerIntro(tone),
             _ => const SizedBox(width: double.infinity),
           },
         ),
       ],
+    );
+  }
+
+  Widget _sellerIntro(SettingsTone tone) {
+    return Container(
+      key: const Key('register-seller-intro'),
+      margin: const EdgeInsets.only(top: 22),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: tone.panel,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: tone.accent.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _t(
+              'سجّل كبائع في ${_SellerStep.values.length} خطوات',
+              'Register as a seller in ${_SellerStep.values.length} steps',
+            ),
+            style: TextStyle(
+              color: tone.text,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _t(
+              'اختر الباقة، ارفع الوثائق، ثم أكمل بياناتك لنشر المنتجات في المتجر.',
+              'Choose a plan, upload documents, then complete your details to publish shop products.',
+            ),
+            style: TextStyle(color: tone.muted, fontSize: 12.5, height: 1.5),
+          ),
+          const SizedBox(height: 14),
+          for (final step in _SellerStep.values)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: tone.accent.withValues(alpha: 0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(step.icon, color: tone.accent, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '${step.index + 1}. ${step.title(_english)}',
+                      style: TextStyle(
+                        color: tone.text,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1358,6 +1593,345 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       label: last
                           ? (_busy ? _t('جارٍ إنشاء الحساب…', 'Creating account…') : _t('إنشاء الحساب', 'Create account'))
                           : (step == null ? _t('ابدأ التسجيل', 'Start signup') : _t('التالي', 'Next')),
+                      icon: last ? Icons.check_rounded : Icons.arrow_forward,
+                      onPressed: _next,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sellerProgress(SettingsTone tone, _SellerStep step) {
+    final total = _SellerStep.values.length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              for (final item in _SellerStep.values) ...[
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: item.index <= step.index
+                          ? tone.accent
+                          : tone.line,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                if (item.index < total - 1) const SizedBox(width: 6),
+              ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: tone.accent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(step.icon, color: tone.ink, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _t(
+                        'الخطوة ${step.index + 1} من $total',
+                        'Step ${step.index + 1} of $total',
+                      ),
+                      key: const Key('register-seller-step-label'),
+                      style: TextStyle(
+                        color: tone.accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      step.title(_english),
+                      style: TextStyle(
+                        color: tone.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      step.hint(_english),
+                      style: TextStyle(color: tone.muted, fontSize: 12.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sellerStepPage(SettingsTone tone, _SellerStep step) {
+    return ListView(
+      key: Key('register-seller-step-${step.name}'),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      children: switch (step) {
+        _SellerStep.plan => [_planSetup(tone)],
+        _SellerStep.documents => [
+          TextField(
+            key: const Key('register-seller-national-id'),
+            controller: _nationalId,
+            keyboardType: TextInputType.number,
+            textDirection: TextDirection.ltr,
+            textAlign: TextAlign.right,
+            maxLength: 14,
+            style: TextStyle(color: tone.text),
+            cursorColor: tone.accent,
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+            decoration: _field(tone, _t('رقم البطاقة الشخصية', 'National ID'))
+                .copyWith(
+                  counterText: '',
+                  hintText: _t('١٤ رقماً', '14 digits'),
+                  hintStyle: TextStyle(color: tone.muted),
+                  prefixIcon: Icon(
+                    Icons.badge_outlined,
+                    color: tone.accent,
+                    size: 22,
+                  ),
+                ),
+          ),
+          const SizedBox(height: 14),
+          _sellerDocPicker(
+            tone,
+            key: const Key('register-seller-national-id-image'),
+            path: _nationalIdImage,
+            icon: Icons.badge_outlined,
+            emptyLabel: _t('ارفع صورة البطاقة الشخصية', 'Upload national ID photo'),
+            hint: _t(
+              'صورة واضحة للوجه الأمامي للبطاقة',
+              'A clear photo of the front of the ID',
+            ),
+            onTap: _chooseNationalIdImage,
+          ),
+          const SizedBox(height: 14),
+          _sellerDocPicker(
+            tone,
+            key: const Key('register-seller-commercial-register'),
+            path: _commercialRegisterImage,
+            icon: Icons.business_center_outlined,
+            emptyLabel: _t(
+              'ارفع صورة السجل التجاري',
+              'Upload commercial register photo',
+            ),
+            hint: _t(
+              'صورة واضحة للسجل التجاري ساري',
+              'A clear photo of a valid commercial register',
+            ),
+            onTap: _chooseCommercialRegisterImage,
+          ),
+        ],
+        _SellerStep.details => [
+          _sellerSummary(tone),
+          const SizedBox(height: 16),
+          ..._accountFields(tone),
+        ],
+      },
+    );
+  }
+
+  Widget _sellerSummary(SettingsTone tone) {
+    return Container(
+      key: const Key('register-seller-summary'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: tone.accent.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: tone.accent.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.workspace_premium_outlined, color: tone.accent, size: 18),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              _plan?.nameFor(_english) ?? _t('بدون باقة', 'No plan'),
+              style: TextStyle(
+                color: tone.text,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Icon(Icons.verified_outlined, color: tone.accent, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            _t('وثائق جاهزة', 'Documents ready'),
+            style: TextStyle(
+              color: tone.text,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sellerDocPicker(
+    SettingsTone tone, {
+    required Key key,
+    required String? path,
+    required IconData icon,
+    required String emptyLabel,
+    required String hint,
+    required VoidCallback onTap,
+  }) {
+    final file = path == null ? null : File(path);
+    final hasImage = file != null && file.existsSync();
+    return Material(
+      color: tone.panel,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: key,
+        onTap: onTap,
+        child: Container(
+          height: 150,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: path == null ? tone.line : tone.accent,
+              width: path == null ? 1 : 1.5,
+            ),
+            image: hasImage
+                ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
+                : null,
+          ),
+          child: Stack(
+            children: [
+              if (!hasImage)
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, color: tone.accent, size: 38),
+                      const SizedBox(height: 8),
+                      Text(
+                        emptyLabel,
+                        style: TextStyle(
+                          color: tone.text,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hint,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: tone.muted, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              if (path != null)
+                PositionedDirectional(
+                  end: 10,
+                  bottom: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tone.accent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.edit_rounded, size: 14, color: tone.ink),
+                        const SizedBox(width: 4),
+                        Text(
+                          _t('تغيير', 'Change'),
+                          style: TextStyle(
+                            color: tone.ink,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sellerBottomBar(SettingsTone tone, _SellerStep? step) {
+    final last = step == _SellerStep.details;
+    return Container(
+      decoration: BoxDecoration(
+        color: tone.background,
+        border: Border(top: BorderSide(color: tone.line)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_error != null) ...[_errorText(), const SizedBox(height: 10)],
+              Row(
+                children: [
+                  if (step != null) ...[
+                    OutlinedButton(
+                      key: const Key('register-seller-back'),
+                      onPressed: _busy ? null : _back,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: tone.text,
+                        side: BorderSide(color: tone.line),
+                        minimumSize: const Size(96, 52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        _t('السابق', 'Back'),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: _primaryButton(
+                      tone,
+                      key: Key(
+                        last ? 'register-seller-submit' : 'register-seller-next',
+                      ),
+                      label: last
+                          ? (_busy
+                                ? _t('جارٍ إنشاء الحساب…', 'Creating account…')
+                                : _t('إنشاء الحساب', 'Create account'))
+                          : (step == null
+                                ? _t('ابدأ التسجيل', 'Start signup')
+                                : _t('التالي', 'Next')),
                       icon: last ? Icons.check_rounded : Icons.arrow_forward,
                       onPressed: _next,
                     ),

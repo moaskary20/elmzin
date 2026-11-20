@@ -8,6 +8,7 @@ use App\Enums\Weekday;
 use App\Http\Controllers\Controller;
 use App\Models\CatalogService;
 use App\Models\Salon;
+use App\Models\SellerProfile;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\Notifier;
@@ -28,7 +29,7 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'account_type' => ['required', Rule::in(['customer', 'salon'])],
+            'account_type' => ['required', Rule::in(['customer', 'salon', 'seller'])],
             'name' => ['required', 'string', 'max:120'],
             'name_en' => ['sometimes', 'nullable', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -56,6 +57,7 @@ class AuthController extends Controller
             ],
             'national_id' => [
                 'required_if:account_type,salon',
+                'required_if:account_type,seller',
                 'nullable',
                 'string',
                 'regex:/^\d{14}$/',
@@ -64,11 +66,15 @@ class AuthController extends Controller
             'services.*.id' => ['required', 'integer', 'distinct'],
             'services.*.price' => ['required', 'numeric', 'min:1', 'max:100000'],
             'plan_id' => [
+                Rule::requiredIf(fn (): bool => ($request->input('account_type') === 'seller')),
                 'nullable',
                 'integer',
                 Rule::exists('subscription_plans', 'id')->where('is_active', true),
             ],
-            'accept_terms' => ['exclude_without:plan_id', 'required', 'accepted'],
+            'accept_terms' => [
+                Rule::requiredIf(fn (): bool => filled($request->input('plan_id')) || $request->input('account_type') === 'seller'),
+                'accepted',
+            ],
             'specialists' => ['sometimes', 'array', 'max:50'],
             'specialists.*.name' => ['required', 'string', 'max:120'],
             'specialists.*.name_en' => ['nullable', 'string', 'max:120'],
@@ -95,6 +101,7 @@ class AuthController extends Controller
             'category_ids.*.exists' => 'أحد الأقسام غير متاح.',
             'national_id.required_if' => 'أدخل رقم البطاقة الشخصية.',
             'national_id.regex' => 'رقم البطاقة الشخصية يجب أن يكون ١٤ رقماً.',
+            'plan_id.required_if' => 'اختر باقة الاشتراك.',
             'services.required_if' => 'اختر خدمة واحدة على الأقل.',
             'services.min' => 'اختر خدمة واحدة على الأقل.',
             'services.*.price.required' => 'حدد سعر كل خدمة مختارة.',
@@ -106,12 +113,20 @@ class AuthController extends Controller
             'address.required' => 'حدد العنوان من الخريطة.',
         ]);
 
-        $role = $data['account_type'] === 'salon' ? UserRole::Salon : UserRole::Customer;
+        $role = match ($data['account_type']) {
+            'salon' => UserRole::Salon,
+            'seller' => UserRole::Seller,
+            default => UserRole::Customer,
+        };
         $catalog = collect();
         $prices = [];
         $categoryIds = [];
 
         $plan = null;
+
+        if ($role === UserRole::Seller) {
+            $plan = SubscriptionPlan::query()->findOrFail($data['plan_id']);
+        }
 
         if ($role === UserRole::Salon) {
             $categoryIds = collect($data['category_ids'] ?? [])
@@ -252,6 +267,23 @@ class AuthController extends Controller
                         'opens_at' => $row['is_closed'] ? null : $row['opens_at'],
                         'closes_at' => $row['is_closed'] ? null : $row['closes_at'],
                     ]);
+                }
+            }
+
+            if ($role === UserRole::Seller) {
+                SellerProfile::query()->create([
+                    'user_id' => $user->id,
+                    'national_id' => $data['national_id'] ?? null,
+                    'verification_status' => VerificationStatus::Pending,
+                    'is_active' => true,
+                ]);
+
+                if ($plan) {
+                    app(SubscriptionService::class)->subscribeSeller(
+                        $user,
+                        $plan,
+                        termsAccepted: (bool) ($data['accept_terms'] ?? false),
+                    );
                 }
             }
 
