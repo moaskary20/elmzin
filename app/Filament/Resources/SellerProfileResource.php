@@ -89,13 +89,8 @@ class SellerProfileResource extends Resource
                     ->searchable()
                     ->description(fn (SellerProfile $record): string => $record->user?->phone ?? ''),
                 TextColumn::make('national_id')
-                    ->label('البطاقة')
+                    ->label('رقم البطاقة')
                     ->placeholder('—'),
-                ImageColumn::make('national_id_image')
-                    ->label('صورة البطاقة')
-                    ->disk('public')
-                    ->height(40)
-                    ->square(),
                 ImageColumn::make('commercial_register_image')
                     ->label('السجل التجاري')
                     ->disk('public')

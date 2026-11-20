@@ -83,8 +83,8 @@ enum _SellerStep {
   documents(
     'الوثائق المطلوبة',
     'Required documents',
-    'ارفع البطاقة الشخصية والسجل التجاري.',
-    'Upload your national ID and commercial register.',
+    'أدخل رقم البطاقة الشخصية وارفع السجل التجاري.',
+    'Enter your national ID number and upload the commercial register.',
     Icons.badge_outlined,
   ),
   details(
@@ -265,7 +265,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final List<String> _salonPhotos = [];
   String? _salonVideo;
   String? _healthCertificate;
-  String? _nationalIdImage;
   String? _commercialRegisterImage;
   final _nationalId = TextEditingController();
 
@@ -282,15 +281,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _chooseHealthCertificate() => _pickInto('health');
 
-  Future<void> _chooseNationalIdImage() => _pickInto('national_id');
-
   Future<void> _chooseCommercialRegisterImage() =>
       _pickInto('commercial_register');
 
   Future<void> _pickInto(String target) async {
     final current = switch (target) {
       'health' => _healthCertificate,
-      'national_id' => _nationalIdImage,
       'commercial_register' => _commercialRegisterImage,
       _ => _photo,
     };
@@ -298,8 +294,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       switch (target) {
         case 'health':
           _healthCertificate = path;
-        case 'national_id':
-          _nationalIdImage = path;
         case 'commercial_register':
           _commercialRegisterImage = path;
         default:
@@ -887,9 +881,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             'Enter the 14-digit national ID.',
           );
         }
-        if (_nationalIdImage == null) {
-          return _t('ارفع صورة البطاقة الشخصية.', 'Upload the national ID photo.');
-        }
         if (_commercialRegisterImage == null) {
           return _t(
             'ارفع صورة السجل التجاري.',
@@ -1101,16 +1092,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
       if (seller && session.token.isNotEmpty) {
-        final nationalImage = _nationalIdImage;
         final commercialImage = _commercialRegisterImage;
-        if (nationalImage != null) {
-          unawaited(
-            AccountApi.uploadSellerNationalId(
-              token: session.token,
-              path: nationalImage,
-            ).catchError((_) {}),
-          );
-        }
         if (commercialImage != null) {
           unawaited(
             AccountApi.uploadSellerCommercialRegister(
@@ -1712,19 +1694,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     size: 22,
                   ),
                 ),
-          ),
-          const SizedBox(height: 14),
-          _sellerDocPicker(
-            tone,
-            key: const Key('register-seller-national-id-image'),
-            path: _nationalIdImage,
-            icon: Icons.badge_outlined,
-            emptyLabel: _t('ارفع صورة البطاقة الشخصية', 'Upload national ID photo'),
-            hint: _t(
-              'صورة واضحة للوجه الأمامي للبطاقة',
-              'A clear photo of the front of the ID',
-            ),
-            onTap: _chooseNationalIdImage,
           ),
           const SizedBox(height: 14),
           _sellerDocPicker(

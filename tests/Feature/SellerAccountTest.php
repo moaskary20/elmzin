@@ -71,18 +71,13 @@ class SellerAccountTest extends TestCase
                 ->exists()
         );
 
-        $this->withToken($token)->post('/api/account/seller/national-id', [
-            'image' => UploadedFile::fake()->image('id.jpg'),
-        ])->assertOk();
-
         $this->withToken($token)->post('/api/account/seller/commercial-register', [
             'image' => UploadedFile::fake()->image('cr.jpg'),
         ])->assertOk();
 
         $profile->refresh();
-        $this->assertNotNull($profile->national_id_image);
+        $this->assertNull($profile->national_id_image);
         $this->assertNotNull($profile->commercial_register_image);
-        Storage::disk('public')->assertExists($profile->national_id_image);
         Storage::disk('public')->assertExists($profile->commercial_register_image);
 
         $created = $this->withToken($token)->post('/api/seller/products', [
